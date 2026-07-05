@@ -154,32 +154,32 @@ export const smileCases: SmileCase[] = [
     id: 1,
     title: "طراحی لبخند با لمینت سرامیکی فوق‌نازک",
     category: "laminate",
-    beforeUrl: "https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&q=80&w=600", // original teeth checkup
-    afterUrl: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=600", // beautiful perfect white smile
+    beforeUrl: "/images/teeth-crooked.svg", // local teeth before illustration
+    afterUrl: "/images/teeth-perfect.svg", // local dazzling smile illustration
     description: "بیمار ۳۲ ساله با شکایت از ناهماهنگی و بدرنگی شدید دندان‌ها که با ۱۰ واحد لمینت سرامیکی آلمانی اصلاح گردید."
   },
   {
     id: 2,
     title: "اصلاح فواصل دندانی با ونیر کامپوزیت IPS",
     category: "composite",
-    beforeUrl: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=600", // treatment seat
-    afterUrl: "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&q=80&w=600", // radiant close smile
+    beforeUrl: "/images/teeth-crooked.svg", // local teeth before illustration
+    afterUrl: "/images/teeth-perfect.svg", // local dazzling smile illustration
     description: "بستن فواصل دندانی (دیاستم) در دندان‌های قدامی با ۸ واحد کامپوزیت بسیار طبیعی با حفظ لبه‌های ترنسلوسنت دندان."
   },
   {
     id: 3,
     title: "ارتودنسی نامرئی دندان‌های فک بالا و پایین",
     category: "ortho",
-    beforeUrl: "https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&q=80&w=600", // checkup close
-    afterUrl: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=600", // beautiful aligned confident teeth/smile
+    beforeUrl: "/images/teeth-crooked.svg", // local teeth before illustration
+    afterUrl: "/images/teeth-perfect.svg", // local dazzling smile illustration
     description: "درمان شلوغی دندان‌ها با الاینرهای شفاف اختصاصی در مدت زمان کوتاه ۱۱ ماه بدون نیاز به براکت‌های فلزی."
   },
   {
     id: 4,
     title: "سفید کردن دندان‌ها با تکنولوژی لیزر دایود",
     category: "bleaching",
-    beforeUrl: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=600", // before chair
-    afterUrl: "https://images.unsplash.com/photo-1579684389782-64d84b5e901a?auto=format&fit=crop&q=80&w=600", // shining teeth whitening outcome
+    beforeUrl: "/images/teeth-crooked.svg", // local teeth before illustration
+    afterUrl: "/images/teeth-perfect.svg", // local dazzling smile illustration
     description: "جرم‌گیری عمیق همراه با یک جلسه بلیچینگ پیشرفته با لیزر مطبی که باعث تغییر رنگ دندان‌ها تا ۴ درجه روشن‌تر شد."
   }
 ];
@@ -191,7 +191,7 @@ export const testimonialsData: Testimonial[] = [
     treatment: "لمینت سرامیکی",
     rating: 5,
     comment: "من همیشه از کارهای دندانپزشکی وحشت داشتم، اما رفتار فوق‌العاده صمیمی کادر دنت فلو و استفاده از بی‌حسی‌های بدون درد کلاً ترسم رو از بین برد. لمینت‌هام به قدری طبیعیه که همه فکر می‌کنن دندونای خودمه. ممنونم از کلینیک خوبتون!",
-    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
+    avatarUrl: "/images/avatar-sara.svg"
   },
   {
     id: 2,
@@ -199,7 +199,7 @@ export const testimonialsData: Testimonial[] = [
     treatment: "ایمپلنت دیجیتال",
     rating: 5,
     comment: "سه واحد ایمپلنت همزمان انجام دادم. واقعاً تعجب کردم که چقدر سریع و بدون کمترین درد و خونریزی تموم شد. محیط کلینیک فوق‌العاده شیک و استریل هست و از بهترین مواد سوئیسی استفاده کردند. پشتیبانی بعد از عملشون هم عالی بود.",
-    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150"
+    avatarUrl: "/images/avatar-amin.svg"
   },
   {
     id: 3,
@@ -207,7 +207,7 @@ export const testimonialsData: Testimonial[] = [
     treatment: "ارتودنسی نامرئی اطفال و بزرگسال",
     rating: 5,
     comment: "به عنوان همکار پزشک، حساسیت زیادی روی پروتکل‌های استریلیزاسیون داشتم. کلینیک دنت فلو در بالاترین سطح استانداردهای جهانی قرار داره. من و پسرم تحت درمان ارتودنسی این کلینیک هستیم و نتایج فراتر از انتظار ما بوده است.",
-    avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150"
+    avatarUrl: "/images/avatar-niloofar.svg"
   },
   {
     id: 4,
@@ -215,7 +215,7 @@ export const testimonialsData: Testimonial[] = [
     treatment: "کامپوزیت ونیر IPS",
     rating: 5,
     comment: "خیلی نگران بودم که بعد از کامپوزیت لبخندم مصنوعی به نظر بیاد، اما دکتر کلینیک با حوصله بسیار زیاد لبه‌ها و رنگ دندونام رو متناسب با چهره‌ام طراحی کرد. الان اعتماد به نفس لبخند زدنم صد برابر شده. به همه رفقا پیشنهادش می‌کنم.",
-    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150"
+    avatarUrl: "/images/avatar-alireza.svg"
   }
 ];
 
@@ -255,7 +255,7 @@ export const blogPosts: BlogPost[] = [
     category: "ایمپلنت",
     date: "۱۴ تیر ۱۴۰۵",
     readTime: "مطالعه ۵ دقیقه",
-    imageUrl: "https://images.unsplash.com/photo-1579684389782-64d84b5e901a?auto=format&fit=crop&q=80&w=500"
+    imageUrl: "/images/blog-implant.svg"
   },
   {
     id: 2,
@@ -264,7 +264,7 @@ export const blogPosts: BlogPost[] = [
     category: "زیبایی",
     date: "۱۰ تیر ۱۴۰۵",
     readTime: "مطالعه ۷ دقیقه",
-    imageUrl: "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&q=80&w=500"
+    imageUrl: "/images/blog-laminate.svg"
   },
   {
     id: 3,
@@ -273,7 +273,7 @@ export const blogPosts: BlogPost[] = [
     category: "سلامت دهان",
     date: "۰۵ تیر ۱۴۰۵",
     readTime: "مطالعه ۴ دقیقه",
-    imageUrl: "https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&q=80&w=500"
+    imageUrl: "/images/blog-halitosis.svg"
   }
 ];
 

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <!-- Circle Background -->
+  <circle cx="50" cy="50" r="48" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="2" />
+  
+  <!-- Face/Skin -->
+  <circle cx="50" cy="46" r="18" fill="#ffedd5" />
+  
+  <!-- Medical Cap/Hair -->
+  <path d="M 30 38 Q 40 22 70 38 Q 75 42 72 46 C 72 46, 62 34, 50 34 C 38 34, 30 44, 30 44 Z" fill="#4c1d95" />
+  <!-- Long Hair tail behind shoulders -->
+  <path d="M 30 44 C 28 52, 28 64, 32 72 C 34 68, 33 50, 34 44 Z" fill="#4c1d95" />
+  <path d="M 70 44 C 72 52, 72 64, 68 72 C 66 68, 67 50, 66 44 Z" fill="#4c1d95" />
+
+  <!-- Eyes -->
+  <circle cx="43" cy="44" r="2" fill="#1e293b" />
+  <circle cx="57" cy="44" r="2" fill="#1e293b" />
+  
+  <!-- Friendly Professional Smile -->
+  <path d="M 43 51 Q 50 58 57 51" fill="none" stroke="#be185d" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Doctor/Lab Coat shoulders -->
+  <path d="M 22 84 C 22 72, 32 64, 50 64 C 68 64, 78 72, 78 84 Z" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+  
+  <!-- Stethoscope / Medical Collar details -->
+  <path d="M 35 64 Q 40 76 50 76 Q 60 76 65 64" fill="none" stroke="#6366f1" stroke-width="2.5" />
+  <!-- Under-shirt -->
+  <path d="M 45 64 L 50 71 L 55 64 Z" fill="#0d9488" />
+</svg>

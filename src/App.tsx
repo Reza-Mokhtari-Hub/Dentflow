@@ -2136,9 +2136,10 @@ ${clinicConfig.phone}
             <div className="absolute inset-0 w-full h-full" id="bento-hero-img-container">
               <img 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800" 
+                src="/images/hero-clinic.svg" 
                 alt="کلینیک دندانپزشکی DentFlow"
                 id="hero-main-img"
+                referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
             </div>
@@ -2179,9 +2180,9 @@ ${clinicConfig.phone}
           >
             <div className="flex items-center gap-3" id="trust-avatars-row">
               <div className="flex -space-x-2.5 space-x-reverse" id="avatar-stack">
-                <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100" alt="سارا" />
-                <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100" alt="امین" />
-                <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100" alt="نیلوفر" />
+                <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="/images/avatar-sara.svg" alt="سارا" referrerPolicy="no-referrer" />
+                <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="/images/avatar-amin.svg" alt="امین" referrerPolicy="no-referrer" />
+                <img className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" src="/images/avatar-niloofar.svg" alt="نیلوفر" referrerPolicy="no-referrer" />
                 <div className="w-9 h-9 rounded-full border-2 border-white bg-teal-500 text-white flex items-center justify-center text-[10px] font-bold" id="avatar-more">+۵k</div>
               </div>
               <p className="text-xs sm:text-sm text-slate-600 font-bold" id="trust-label">رضایت‌مندی بیش از ۵۰۰۰ بیمار زیبایی و درمانی در سال گذشته</p>
@@ -2656,6 +2657,7 @@ ${clinicConfig.phone}
                 alt="بعد از درمان دندانپزشکی" 
                 className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                 id="img-after"
+                referrerPolicy="no-referrer"
               />
               
               {/* Visual Label After */}
@@ -2673,6 +2675,7 @@ ${clinicConfig.phone}
                   className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                   style={{ width: sliderRef.current?.getBoundingClientRect().width }}
                   id="img-before"
+                  referrerPolicy="no-referrer"
                 />
               </div>
 
@@ -2778,6 +2781,7 @@ ${clinicConfig.phone}
                     src={testimonialsData[currentTestimonialIdx].avatarUrl} 
                     alt={testimonialsData[currentTestimonialIdx].name} 
                     id="patient-avatar"
+                    referrerPolicy="no-referrer"
                   />
                   <div className="text-right" id="patient-text">
                     <p className="font-extrabold text-slate-900 text-xs sm:text-sm" id="patient-name">{testimonialsData[currentTestimonialIdx].name}</p>
@@ -2921,6 +2925,7 @@ ${clinicConfig.phone}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                     src={post.imageUrl} 
                     alt={post.title} 
+                    referrerPolicy="no-referrer"
                   />
                   <span className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm text-slate-700 text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm border border-slate-100" id={`article-badge-${post.id}`}>
                     {post.category}

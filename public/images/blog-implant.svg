@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </linearGradient>
+    <linearGradient id="implantGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#94a3b8" />
+      <stop offset="50%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#ccfbf1" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="500" height="400" fill="url(#bg)" rx="24" />
+
+  <!-- Grid lines -->
+  <g stroke="#ffffff" stroke-width="0.5" opacity="0.05">
+    <line x1="50" y1="0" x2="50" y2="400" />
+    <line x1="100" y1="0" x2="100" y2="400" />
+    <line x1="150" y1="0" x2="150" y2="400" />
+    <line x1="200" y1="0" x2="200" y2="400" />
+    <line x1="250" y1="0" x2="250" y2="400" />
+    <line x1="300" y1="0" x2="300" y2="400" />
+    <line x1="350" y1="0" x2="350" y2="400" />
+    <line x1="400" y1="0" x2="400" y2="400" />
+    <line x1="450" y1="0" x2="450" y2="400" />
+    <line x1="0" y1="50" x2="500" y2="50" />
+    <line x1="0" y1="100" x2="500" y2="100" />
+    <line x1="0" y1="150" x2="500" y2="150" />
+    <line x1="0" y1="200" x2="500" y2="200" />
+    <line x1="0" y1="250" x2="500" y2="250" />
+    <line x1="0" y1="300" x2="500" y2="300" />
+    <line x1="0" y1="350" x2="500" y2="350" />
+  </g>
+
+  <!-- Title Badge -->
+  <rect x="30" y="30" width="130" height="30" rx="15" fill="#0d9488" opacity="0.9" />
+  <text x="95" y="49" font-family="sans-serif" font-size="12" font-weight="900" fill="#ffffff" text-anchor="middle">ایمپلنت دیجیتال</text>
+
+  <!-- Implant Assembly Diagram -->
+  <g transform="translate(250, 220)">
+    <!-- Jaw bone (dashed representation) -->
+    <path d="M -150 80 Q 0 40 150 80 L 150 150 L -150 150 Z" fill="#312e81" opacity="0.3" stroke="#4338ca" stroke-width="1.5" stroke-dasharray="4 4" />
+
+    <!-- 1. Implant Screw (Titanium root) -->
+    <g transform="translate(0, 40)">
+      <!-- Cylinder Screw Base -->
+      <rect x="-18" y="0" width="36" height="70" rx="5" fill="url(#implantGrad)" stroke="#1e293b" stroke-width="1" />
+      <!-- Screw threads -->
+      <line x1="-18" y1="15" x2="18" y2="10" stroke="#334155" stroke-width="3" />
+      <line x1="-18" y1="28" x2="18" y2="23" stroke="#334155" stroke-width="3" />
+      <line x1="-18" y1="41" x2="18" y2="36" stroke="#334155" stroke-width="3" />
+      <line x1="-18" y1="54" x2="18" y2="49" stroke="#334155" stroke-width="3" />
+    </g>
+
+    <!-- 2. Abutment (Middle connector) -->
+    <path d="M -12 -15 L 12 -15 L 15 40 L -15 40 Z" fill="#cbd5e1" stroke="#1e293b" stroke-width="1" />
+    <line x1="-12" y1="10" x2="12" y2="10" stroke="#94a3b8" />
+
+    <!-- 3. Ceramic Crown (Tooth) -->
+    <path d="M -32 -110 C -52 -110, -42 -25, -28 -15 C -20 -10, 20 -10, 28 -15 C 42 -25, 52 -110, 32 -110 Z" fill="url(#crownGrad)" stroke="#0f766e" stroke-width="1.5" filter="url(#glow)" />
+    <!-- Symmetrical crown groove -->
+    <path d="M -15 -105 C -5 -105, 0 -95, 0 -95 C 0 -95, 5 -105, 15 -105 L -15 -105 Z" fill="#ffffff" opacity="0.8" />
+
+    <!-- Explanatory lines and tags -->
+    <line x1="45" y1="-60" x2="120" y2="-60" stroke="#2dd4bf" stroke-width="1" stroke-dasharray="2 2" />
+    <circle cx="45" cy="-60" r="3" fill="#2dd4bf" />
+    <text x="130" y="-56" font-family="sans-serif" font-size="11" fill="#e2e8f0" font-weight="bold">روکش تمام سرامیک Zirconia</text>
+
+    <line x1="12" y1="15" x2="120" y2="15" stroke="#2dd4bf" stroke-width="1" stroke-dasharray="2 2" />
+    <circle cx="12" cy="15" r="3" fill="#2dd4bf" />
+    <text x="130" y="19" font-family="sans-serif" font-size="11" fill="#e2e8f0" font-weight="bold">اباتمنت تیتانیومی</text>
+
+    <line x1="18" y1="80" x2="120" y2="80" stroke="#2dd4bf" stroke-width="1" stroke-dasharray="2 2" />
+    <circle cx="18" cy="80" r="3" fill="#2dd4bf" />
+    <text x="130" y="84" font-family="sans-serif" font-size="11" fill="#e2e8f0" font-weight="bold">پایه ایمپلنت (فیکسچر سوئیسی)</text>
+  </g>
+
+</svg>
