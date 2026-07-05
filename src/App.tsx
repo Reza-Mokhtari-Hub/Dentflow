@@ -306,17 +306,91 @@ export default function App() {
   const [useLocalDb, setUseLocalDb] = useState<boolean>(() => {
     const saved = localStorage.getItem("df_use_local_db");
     if (saved) return saved === "true";
-    // Auto-detect Netlify, GitHub Pages or custom static environments
-    const isStaticHost = 
-      window.location.hostname.includes("netlify") || 
-      window.location.hostname.includes("github.io") || 
-      window.location.hostname.includes("vercel") || 
-      window.location.hostname.includes("render");
-    return isStaticHost;
+    return false;
   });
+  const [sharedStateLoaded, setSharedStateLoaded] = useState(false);
 
   // CLINIC ARTICLES DATABASE STATE & EFFECT
   const [articles, setArticles] = useState<BlogPost[]>([]);
+
+  useEffect(() => {
+    const loadSharedState = async () => {
+      try {
+        const response = await fetch("/api/clinic-state");
+        if (!response.ok) throw new Error("Could not load shared state");
+
+        const sharedState = await response.json();
+
+        if (Array.isArray(sharedState.patients) && sharedState.patients.length > 0) {
+          setPatients(sharedState.patients);
+        }
+        if (Array.isArray(sharedState.transactions) && sharedState.transactions.length > 0) {
+          setTransactions(sharedState.transactions);
+        }
+        if (Array.isArray(sharedState.blogPosts) && sharedState.blogPosts.length > 0) {
+          setArticles(sharedState.blogPosts);
+        }
+        if (Array.isArray(sharedState.bookings)) {
+          setAdminBookings(sharedState.bookings);
+        }
+        if (sharedState.adminCredentials) {
+          setStoredAdminUsername(sharedState.adminCredentials.username || "admin");
+          setStoredAdminPassword(sharedState.adminCredentials.password || "admin");
+        }
+        if (sharedState.clinicConfig) {
+          setClinicConfig(sharedState.clinicConfig);
+        }
+        if (Array.isArray(sharedState.services) && sharedState.services.length > 0) {
+          setServices(sharedState.services);
+        }
+        if (sharedState.aiConfig) {
+          setAiName(sharedState.aiConfig.name || "دستیار هوشمند دنت فلو");
+          setAiGreeting(sharedState.aiConfig.greeting || "سلام! من دستیار هوشمند و تخصصی کلینیک دندانپزشکی دنت فلو هستم. هر سوالی درباره طرح درمان، هزینه‌ها، اقساط، ترس از دندانپزشکی یا خدمات ما دارید بپرسید؛ من با عشق راهنمایی‌تان می‌کنم! ✨");
+          setAiPrompt(sharedState.aiConfig.prompt || `شما دستیار تخصصی، دلسوز و فوق‌العاده باهوش کلینیک دندانپزشکی دیجیتال "دنت فلو" (DentFlow) هستید. نام شما "دستیار هوشمند دنت فلو" است.\nوظایف شما:\n۱. پاسخ به سوالات مراجعین و بیماران درباره مشکلات دندانی، بیماری‌های دهان، خدمات کلینیک، هزینه‌ها، و شرايط اقساطی به زبان فارسی شیوا، صمیمی، دلسوزانه و کاملاً محترمانه.\n۲. معرفی خدمات مختلف کلینیک دنت فلو (ایمپلنت دیجیتال سوئیسی، لمینت سرامیکی E-max، ونیر کامپوزیت IPS، ارتودنسی نامرئی الاینر، عصب‌کشی روتاری بدون درد، اطفال و جراحی‌های لثه).\n۳. دندانپزشک ارشد کلینیک "دکتر مختاری" (جراح و دندانپزشک زیبایی، دارای فلوشیپ ایمپلنتولوژی دیجیتال از سوئیس با بیش از ۱۰ سال سابقه و ثبت بیش از ۵۰۰۰ مورد ترمیم موفق لبخند) است.\n۴. شماره تماس کلینیک: ۰۲۱-۲۲۰۰۰۰۰۰ است. آدرس کلینیک در شهر تهران (منطقه الهیه، خیابان فرشته) می‌باشد.\n۵. شرایط پرداخت اقساطی بسیار منعطف است: ۳۰ الی ۴۰ درصد پیش‌پرداخت، مابقی در اقساط ۶ الی ۱۲ ماهه با چک صیادی بدون بهره و سود.\n۶. برای بیماران با ترس و اضطراب شدید دندانپزشکی، توضیح دهید که ما مجهز به سیستم "سدیشن" (سودیشن یا خواب مصنوعی بسیار ایمن و آرام‌بخش با نظارت متخصص بیهوشی) هستیم تا درمان کاملاً بدون درد و بدون کوچکترین استرسی سپری شود.\n\nبه یاد داشته باشید شما سفیر برند دنت فلو هستید و آرامش دادن به بیمار اولویت اول شماست.`);
+        }
+      } catch (error) {
+        console.warn("Unable to load shared clinic state from the server; using local browser data instead.", error);
+      } finally {
+        setSharedStateLoaded(true);
+      }
+    };
+
+    void loadSharedState();
+  }, []);
+
+  useEffect(() => {
+    if (!sharedStateLoaded) return;
+
+    const syncSharedState = async () => {
+      try {
+        await fetch("/api/clinic-state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            patients,
+            transactions,
+            blogPosts: articles,
+            bookings: adminBookings,
+            adminCredentials: {
+              username: storedAdminUsername,
+              password: storedAdminPassword,
+            },
+            clinicConfig,
+            services,
+            aiConfig: {
+              name: aiName,
+              greeting: aiGreeting,
+              prompt: aiPrompt,
+            },
+          }),
+        });
+      } catch (error) {
+        console.warn("Unable to sync clinic state to the server.", error);
+      }
+    };
+
+    void syncSharedState();
+  }, [sharedStateLoaded, patients, transactions, articles, adminBookings, storedAdminUsername, storedAdminPassword, clinicConfig, services, aiName, aiGreeting, aiPrompt]);
 
   useEffect(() => {
     const fetchArticles = async () => {

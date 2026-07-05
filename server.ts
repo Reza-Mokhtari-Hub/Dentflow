@@ -1,10 +1,174 @@
 import express from "express";
 import path from "path";
+import { mkdir, readFile, writeFile } from "fs/promises";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+interface Booking {
+  id: string;
+  fullName: string;
+  phone: string;
+  serviceId: string;
+  date: string;
+  timeSlot: "morning" | "afternoon";
+  notes?: string;
+  status: "pending" | "approved" | "cancelled";
+  createdAt: string;
+  adminComment?: string;
+}
+
+interface BlogPost {
+  id: number;
+  title: string;
+  excerpt: string;
+  category: string;
+  date: string;
+  readTime: string;
+  imageUrl: string;
+}
+
+interface ClinicDataState {
+  bookings: Booking[];
+  blogPosts: BlogPost[];
+  patients: any[];
+  transactions: any[];
+  adminCredentials: { username: string; password: string };
+  clinicConfig: any;
+  services: any[];
+  aiConfig: { name: string; greeting: string; prompt: string };
+}
+
+const stateFilePath = path.join(process.cwd(), "data", "clinic-data.json");
+
+const defaultClinicState: ClinicDataState = {
+  bookings: [
+    {
+      id: "DF-749210",
+      fullName: "امیرحسین رضایی",
+      phone: "09121112233",
+      serviceId: "implant",
+      date: "2026-07-06",
+      timeSlot: "morning",
+      notes: "نیاز به ایمپلنت فوری سوئیسی فک بالا دارم. آیا امکان درمان بدون درد وجود دارد؟",
+      status: "pending",
+      createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+      adminComment: ""
+    },
+    {
+      id: "DF-183029",
+      fullName: "مهسا کریمی",
+      phone: "09354445566",
+      serviceId: "laminate",
+      date: "2026-07-07",
+      timeSlot: "afternoon",
+      notes: "برای معاینه لمینت سرامیکی E-Max نوبت می‌خواهم.",
+      status: "approved",
+      createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+      adminComment: "تایید شد. منتظر تشریف‌فرمایی شما در ساعت ۱۴:۳۰ هستیم. لطفاً مدارک دندانپزشکی قبلی را همراه داشته باشید."
+    },
+    {
+      id: "DF-394021",
+      fullName: "سینا باقری",
+      phone: "09197778899",
+      serviceId: "orthodontics",
+      date: "2026-07-10",
+      timeSlot: "afternoon",
+      notes: "درباره هزینه الاینر نامرئی ارتودنسی سوال دارم.",
+      status: "pending",
+      createdAt: new Date(Date.now() - 3600000 * 12).toISOString(),
+      adminComment: ""
+    }
+  ],
+  blogPosts: [
+    {
+      id: 1,
+      title: "مراقبت‌های حیاتی پس از کاشت ایمپلنت دندان که باید بدانید",
+      excerpt: "کاشت ایمپلنت یک جراحی ظریف است. رعایت این ۵ نکته طلایی در هفته اول می‌تواند شانس موفقیت جوش خوردن پایه را تا ۹۹٪ تضمین کند.",
+      category: "ایمپلنت",
+      date: "۱۴ تیر ۱۴۰۵",
+      readTime: "مطالعه ۵ دقیقه",
+      imageUrl: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=600&auto=format&fit=crop"
+    },
+    {
+      id: 2,
+      title: "تفاوت لمینت سرامیکی و کامپوزیت ونیر چیست؟ کدام مناسب شماست؟",
+      excerpt: "بررسی کامل مقایسه قیمت، میزان تراش دندان، ثبات رنگ، طول عمر و تفاوت زیبایی لمینت‌های شیشه‌ای و کامپوزیت‌های سوئیسی.",
+      category: "زیبایی",
+      date: "۱۰ تیر ۱۴۰۵",
+      readTime: "مطالعه ۷ دقیقه",
+      imageUrl: "https://images.unsplash.com/photo-1512223792601-592a9809eed4?q=80&w=600&auto=format&fit=crop"
+    },
+    {
+      id: 3,
+      title: "چگونه بوی بد دهان را یکبار برای همیشه درمان کنیم؟",
+      excerpt: "بوی بد دهان همیشه به خاطر مسواک نزدن نیست! علل پنهان مانند بیماری‌های لثه، سنگ لوزه‌ها و مشکلات گوارشی را بشناسید و درمان کنید.",
+      category: "سلامت دهان",
+      date: "۰۵ تیر ۱۴۰۵",
+      readTime: "مطالعه ۴ دقیقه",
+      imageUrl: "https://images.unsplash.com/photo-1579684389782-64d84b5e905d?q=80&w=600&auto=format&fit=crop"
+    }
+  ],
+  patients: [],
+  transactions: [],
+  adminCredentials: { username: "admin", password: "admin" },
+  clinicConfig: {
+    phone: "۰۲۱-۲۲۰۰۰۰۰۰ | ۰۲۱-۲۲۰۰۰۰۰۱",
+    phoneRaw: "02122000000",
+    address: "تهران، الهیه، خیابان فرشته، ساختمان پزشکان مریم، طبقه سوم",
+    telegram: "۰۹۱۲۳۴۵۶۷۸۹",
+    workingHours: "شنبه تا چهارشنبه ۹:۰۰ الی ۲۱:۰۰ | پنجشنبه ۹:۰۰ الی ۱۵:۰۰",
+    doctorName: "دکتر مختاری",
+    doctorTitle: "جراح و دندانپزشک زیبایی - فلوشیپ ایمپلنتولوژی دیجیتال از سوئیس",
+    aboutDesc: "هدف ما در دنت فلو برطرف کردن ترس‌ها و دغدغه‌های همیشگی شما از دندانپزشکی است. ما معتقدیم کیفیت و دقت در درمان حق بیمار است و با گردهم‌آوری بهترین متخصصان، به کارگیری فناوری سه‌بعدی دیجیتال و دکوراسیون پزشکی آرامش‌بخش، فضایی رویایی برای درمان به وجود آورده‌ایم.",
+    installmentInfo: "۳۰ الی ۴۰ درصد پیش‌پرداخت، مابقی در اقساط ۶ الی ۱۲ ماهه با چک صیادی بدون بهره و سود"
+  },
+  services: [],
+  aiConfig: {
+    name: "دستیار هوشمند دنت فلو",
+    greeting: "سلام! من دستیار هوشمند و تخصصی کلینیک دندانپزشکی دنت فلو هستم. هر سوالی درباره طرح درمان، هزینه‌ها، اقساط، ترس از دندانپزشکی یا خدمات ما دارید بپرسید؛ من با عشق راهنمایی‌تان می‌کنم! ✨",
+    prompt: `شما دستیار تخصصی، دلسوز و فوق‌العاده باهوش کلینیک دندانپزشکی دیجیتال "دنت فلو" (DentFlow) هستید. نام شما "دستیار هوشمند دنت فلو" است.
+وظایف شما:
+۱. پاسخ به سوالات مراجعین و بیماران درباره مشکلات دندانی، بیماری‌های دهان، خدمات کلینیک، هزینه‌ها، و شرايط اقساطی به زبان فارسی شیوا، صمیمی، دلسوزانه و کاملاً محترمانه.
+۲. معرفی خدمات مختلف کلینیک دنت فلو (ایمپلنت دیجیتال سوئیسی، لمینت سرامیکی E-max، ونیر کامپوزیت IPS، ارتودنسی نامرئی الاینر، عصب‌کشی روتاری بدون درد، اطفال و جراحی‌های لثه).
+۳. دندانپزشک ارشد کلینیک "دکتر مختاری" (جراح و دندانپزشک زیبایی، دارای فلوشیپ ایمپلنتولوژی دیجیتال از سوئیس با بیش از ۱۰ سال سابقه و ثبت بیش از ۵۰۰۰ مورد ترمیم موفق لبخند) است.
+۴. شماره تماس کلینیک: ۰۲۱-۲۲۰۰۰۰۰۰ است. آدرس کلینیک در شهر تهران (منطقه الهیه، خیابان فرشته) می‌باشد.
+۵. شرایط پرداخت اقساطی بسیار منعطف است: ۳۰ الی ۴۰ درصد پیش‌پرداخت، مابقی در اقساط ۶ الی ۱۲ ماهه با چک صیادی بدون بهره و سود.
+۶. برای بیماران با ترس و اضطراب شدید دندانپزشکی، توضیح دهید که ما مجهز به سیستم "سدیشن" (سودیشن یا خواب مصنوعی بسیار ایمن و آرام‌بخش با نظارت متخصص بیهوشی) هستیم تا درمان کاملاً بدون درد و بدون کوچکترین استرسی سپری شود.
+
+به یاد داشته باشید شما سفیر برند دنت فلو هستید و آرامش دادن به بیمار اولویت اول شماست.`
+  }
+};
+
+async function loadPersistedState(): Promise<ClinicDataState> {
+  try {
+    await mkdir(path.dirname(stateFilePath), { recursive: true });
+    const raw = await readFile(stateFilePath, "utf8");
+    const parsed = JSON.parse(raw) as Partial<ClinicDataState>;
+
+    return {
+      bookings: Array.isArray(parsed.bookings) ? parsed.bookings : defaultClinicState.bookings,
+      blogPosts: Array.isArray(parsed.blogPosts) ? parsed.blogPosts : defaultClinicState.blogPosts,
+      patients: Array.isArray(parsed.patients) ? parsed.patients : defaultClinicState.patients,
+      transactions: Array.isArray(parsed.transactions) ? parsed.transactions : defaultClinicState.transactions,
+      adminCredentials: parsed.adminCredentials || defaultClinicState.adminCredentials,
+      clinicConfig: parsed.clinicConfig || defaultClinicState.clinicConfig,
+      services: Array.isArray(parsed.services) ? parsed.services : defaultClinicState.services,
+      aiConfig: parsed.aiConfig || defaultClinicState.aiConfig,
+    };
+  } catch {
+    await mkdir(path.dirname(stateFilePath), { recursive: true });
+    await writeFile(stateFilePath, JSON.stringify(defaultClinicState, null, 2), "utf8");
+    return defaultClinicState;
+  }
+}
+
+async function savePersistedState(state: ClinicDataState) {
+  await mkdir(path.dirname(stateFilePath), { recursive: true });
+  await writeFile(stateFilePath, JSON.stringify(state, null, 2), "utf8");
+}
 
 // Ensure the API key exists
 const apiKey = process.env.GEMINI_API_KEY;
@@ -25,6 +189,49 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  const persistedState = await loadPersistedState();
+  let bookings = persistedState.bookings;
+  let blogPosts = persistedState.blogPosts;
+  let patients = persistedState.patients;
+  let transactions = persistedState.transactions;
+  let adminCredentials = persistedState.adminCredentials;
+  let clinicConfig = persistedState.clinicConfig;
+  let services = persistedState.services;
+  let aiConfig = persistedState.aiConfig;
+
+  const persistState = async () => {
+    await savePersistedState({
+      bookings,
+      blogPosts,
+      patients,
+      transactions,
+      adminCredentials,
+      clinicConfig,
+      services,
+      aiConfig,
+    });
+  };
+
+  app.get("/api/clinic-state", async (_req, res) => {
+    res.json({ bookings, blogPosts, patients, transactions, adminCredentials, clinicConfig, services, aiConfig });
+  });
+
+  app.post("/api/clinic-state", async (req, res) => {
+    const payload = req.body || {};
+
+    if (Array.isArray(payload.bookings)) bookings = payload.bookings;
+    if (Array.isArray(payload.blogPosts)) blogPosts = payload.blogPosts;
+    if (Array.isArray(payload.patients)) patients = payload.patients;
+    if (Array.isArray(payload.transactions)) transactions = payload.transactions;
+    if (payload.adminCredentials) adminCredentials = payload.adminCredentials;
+    if (payload.clinicConfig) clinicConfig = payload.clinicConfig;
+    if (Array.isArray(payload.services)) services = payload.services;
+    if (payload.aiConfig) aiConfig = payload.aiConfig;
+
+    await persistState();
+    res.json({ success: true, data: { bookings, blogPosts, patients, transactions, adminCredentials, clinicConfig, services, aiConfig } });
+  });
 
   // API Route: Clinical AI Assistant
   app.post("/api/chat", async (req, res) => {
@@ -101,58 +308,7 @@ async function startServer() {
     }
   });
 
-  // In-memory persistent Bookings Database
-  interface Booking {
-    id: string;
-    fullName: string;
-    phone: string;
-    serviceId: string;
-    date: string;
-    timeSlot: "morning" | "afternoon";
-    notes?: string;
-    status: "pending" | "approved" | "cancelled";
-    createdAt: string;
-    adminComment?: string;
-  }
-
-  let bookings: Booking[] = [
-    {
-      id: "DF-749210",
-      fullName: "امیرحسین رضایی",
-      phone: "09121112233",
-      serviceId: "implant",
-      date: "2026-07-06",
-      timeSlot: "morning",
-      notes: "نیاز به ایمپلنت فوری سوئیسی فک بالا دارم. آیا امکان درمان بدون درد وجود دارد؟",
-      status: "pending",
-      createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-      adminComment: ""
-    },
-    {
-      id: "DF-183029",
-      fullName: "مهسا کریمی",
-      phone: "09354445566",
-      serviceId: "laminate",
-      date: "2026-07-07",
-      timeSlot: "afternoon",
-      notes: "برای معاینه لمینت سرامیکی E-Max نوبت می‌خواهم.",
-      status: "approved",
-      createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-      adminComment: "تایید شد. منتظر تشریف‌فرمایی شما در ساعت ۱۴:۳۰ هستیم. لطفاً مدارک دندانپزشکی قبلی را همراه داشته باشید."
-    },
-    {
-      id: "DF-394021",
-      fullName: "سینا باقری",
-      phone: "09197778899",
-      serviceId: "orthodontics",
-      date: "2026-07-10",
-      timeSlot: "afternoon",
-      notes: "درباره هزینه الاینر نامرئی ارتودنسی سوال دارم.",
-      status: "pending",
-      createdAt: new Date(Date.now() - 3600000 * 12).toISOString(),
-      adminComment: ""
-    }
-  ];
+// Bookings data is loaded from the shared persisted state above.
 
   // API Route: Get all bookings
   app.get("/api/bookings", (req, res) => {
@@ -160,7 +316,7 @@ async function startServer() {
   });
 
   // API Route: Create new booking
-  app.post("/api/bookings", (req, res) => {
+  app.post("/api/bookings", async (req, res) => {
     const { fullName, phone, serviceId, date, timeSlot, notes } = req.body;
 
     if (!fullName || !phone || !date) {
@@ -182,6 +338,7 @@ async function startServer() {
     };
 
     bookings.unshift(newBooking); // Add to the top
+    await persistState();
     res.status(201).json(newBooking);
   });
 
@@ -196,7 +353,7 @@ async function startServer() {
   });
 
   // API Route: Update booking status, notes, date, timeSlot, or adminComment
-  app.put("/api/bookings/:id", (req, res) => {
+  app.put("/api/bookings/:id", async (req, res) => {
     const { id } = req.params;
     const { status, notes, adminComment, date, timeSlot } = req.body;
 
@@ -221,11 +378,12 @@ async function startServer() {
       bookings[bookingIndex].timeSlot = timeSlot;
     }
 
+    await persistState();
     res.json(bookings[bookingIndex]);
   });
 
   // API Route: Delete booking
-  app.delete("/api/bookings/:id", (req, res) => {
+  app.delete("/api/bookings/:id", async (req, res) => {
     const { id } = req.params;
     const initialLength = bookings.length;
     bookings = bookings.filter(b => b.id !== id);
@@ -234,49 +392,11 @@ async function startServer() {
       return res.status(404).json({ error: "نوبت پیدا نشد." });
     }
 
+    await persistState();
     res.json({ success: true, message: "نوبت با موفقیت حذف شد." });
   });
 
-  // In-memory persistent Blog Posts Database
-  interface BlogPost {
-    id: number;
-    title: string;
-    excerpt: string;
-    category: string;
-    date: string;
-    readTime: string;
-    imageUrl: string;
-  }
-
-  let blogPosts: BlogPost[] = [
-    {
-      id: 1,
-      title: "مراقبت‌های حیاتی پس از کاشت ایمپلنت دندان که باید بدانید",
-      excerpt: "کاشت ایمپلنت یک جراحی ظریف است. رعایت این ۵ نکته طلایی در هفته اول می‌تواند شانس موفقیت جوش خوردن پایه را تا ۹۹٪ تضمین کند.",
-      category: "ایمپلنت",
-      date: "۱۴ تیر ۱۴۰۵",
-      readTime: "مطالعه ۵ دقیقه",
-      imageUrl: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=600&auto=format&fit=crop"
-    },
-    {
-      id: 2,
-      title: "تفاوت لمینت سرامیکی و کامپوزیت ونیر چیست؟ کدام مناسب شماست؟",
-      excerpt: "بررسی کامل مقایسه قیمت، میزان تراش دندان، ثبات رنگ، طول عمر و تفاوت زیبایی لمینت‌های شیشه‌ای و کامپوزیت‌های سوئیسی.",
-      category: "زیبایی",
-      date: "۱۰ تیر ۱۴۰۵",
-      readTime: "مطالعه ۷ دقیقه",
-      imageUrl: "https://images.unsplash.com/photo-1512223792601-592a9809eed4?q=80&w=600&auto=format&fit=crop"
-    },
-    {
-      id: 3,
-      title: "چگونه بوی بد دهان را یکبار برای همیشه درمان کنیم؟",
-      excerpt: "بوی بد دهان همیشه به خاطر مسواک نزدن نیست! علل پنهان مانند بیماری‌های لثه، سنگ لوزه‌ها و مشکلات گوارشی را بشناسید و درمان کنید.",
-      category: "سلامت دهان",
-      date: "۰۵ تیر ۱۴۰۵",
-      readTime: "مطالعه ۴ دقیقه",
-      imageUrl: "https://images.unsplash.com/photo-1579684389782-64d84b5e905d?q=80&w=600&auto=format&fit=crop"
-    }
-  ];
+  // Blog posts data is loaded from the shared persisted state above.
 
   // API Route: Get all articles
   app.get("/api/articles", (req, res) => {
@@ -284,7 +404,7 @@ async function startServer() {
   });
 
   // API Route: Create new article
-  app.post("/api/articles", (req, res) => {
+  app.post("/api/articles", async (req, res) => {
     const { title, excerpt, category, date, readTime, imageUrl } = req.body;
 
     if (!title || !excerpt || !category) {
@@ -303,11 +423,12 @@ async function startServer() {
     };
 
     blogPosts.unshift(newArticle);
+    await persistState();
     res.status(201).json(newArticle);
   });
 
   // API Route: Update article
-  app.put("/api/articles/:id", (req, res) => {
+  app.put("/api/articles/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const { title, excerpt, category, date, readTime, imageUrl } = req.body;
 
@@ -326,11 +447,12 @@ async function startServer() {
       imageUrl: imageUrl || blogPosts[index].imageUrl,
     };
 
+    await persistState();
     res.json(blogPosts[index]);
   });
 
   // API Route: Delete article
-  app.delete("/api/articles/:id", (req, res) => {
+  app.delete("/api/articles/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const initialLength = blogPosts.length;
     blogPosts = blogPosts.filter(p => p.id !== id);
@@ -339,6 +461,7 @@ async function startServer() {
       return res.status(404).json({ error: "مقاله یافت نشد." });
     }
 
+    await persistState();
     res.json({ success: true, message: "مقاله با موفقیت حذف شد." });
   });
 
