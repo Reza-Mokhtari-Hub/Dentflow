@@ -1,0 +1,6 @@
+{
+  "name": "DentFlow Dental Clinic",
+  "description": "سایت رسمی کلینیک دندانپزشکی دنت فلو - ارائه خدمات تخصصی زیبایی، ایمپلنت، ارتودنسی و درمان ریشه با تکنولوژی روز دنیا",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
