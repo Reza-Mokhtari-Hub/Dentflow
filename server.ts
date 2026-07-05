@@ -29,7 +29,7 @@ async function startServer() {
   // API Route: Clinical AI Assistant
   app.post("/api/chat", async (req, res) => {
     try {
-      const { history, message } = req.body;
+      const { history, message, customSystemInstruction } = req.body;
 
       if (!message) {
         return res.status(400).json({ error: "Message is required." });
@@ -89,7 +89,7 @@ async function startServer() {
         model: "gemini-3.5-flash",
         contents,
         config: {
-          systemInstruction,
+          systemInstruction: customSystemInstruction || systemInstruction,
           temperature: 0.7,
         }
       });

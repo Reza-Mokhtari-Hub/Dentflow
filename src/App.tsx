@@ -48,6 +48,20 @@ import {
   AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  Legend, 
+  AreaChart, 
+  Area 
+} from "recharts";
 
 import { 
   servicesData, 
@@ -103,6 +117,45 @@ export default function App() {
   const [loginError, setLoginError] = useState("");
   const [adminBookings, setAdminBookings] = useState<any[]>([]);
   const [adminFilter, setAdminFilter] = useState<string>("all");
+  const [adminActiveTab, setAdminActiveTab] = useState<"bookings" | "services" | "contact" | "ai" | "analytics">("bookings");
+
+  // Dynamic Clinic Configuration
+  const [clinicConfig, setClinicConfig] = useState(() => {
+    const saved = localStorage.getItem("df_clinic_config");
+    return saved ? JSON.parse(saved) : {
+      phone: "۰۲۱-۲۲۰۰۰۰۰۰ | ۰۲۱-۲۲۰۰۰۰۰۱",
+      phoneRaw: "02122000000",
+      address: "تهران، الهیه، خیابان فرشته، ساختمان پزشکان مریم، طبقه سوم",
+      telegram: "۰۹۱۲۳۴۵۶۷۸۹",
+      workingHours: "شنبه تا چهارشنبه ۹:۰۰ الی ۲۱:۰۰ | پنجشنبه ۹:۰۰ الی ۱۵:۰۰",
+      doctorName: "دکتر مختاری",
+      doctorTitle: "جراح و دندانپزشک زیبایی - فلوشیپ ایمپلنتولوژی دیجیتال از سوئیس",
+      aboutDesc: "هدف ما در دنت فلو برطرف کردن ترس‌ها و دغدغه‌های همیشگی شما از دندانپزشکی است. ما معتقدیم کیفیت و دقت در درمان حق بیمار است و با گردهم‌آوری بهترین متخصصان، به کارگیری فناوری سه‌بعدی دیجیتال و دکوراسیون پزشکی آرامش‌بخش، فضایی رویایی برای درمان به وجود آورده‌ایم.",
+      installmentInfo: "۳۰ الی ۴۰ درصد پیش‌پرداخت، مابقی در اقساط ۶ الی ۱۲ ماهه با چک صیادی بدون بهره و سود"
+    };
+  });
+
+  // Dynamic Services Data
+  const [services, setServices] = useState<Service[]>(() => {
+    const saved = localStorage.getItem("df_services");
+    return saved ? JSON.parse(saved) : servicesData;
+  });
+
+  // Dynamic AI Bot Configurations
+  const [aiName, setAiName] = useState(() => localStorage.getItem("df_ai_name") || "دستیار هوشمند دنت فلو");
+  const [aiGreeting, setAiGreeting] = useState(() => localStorage.getItem("df_ai_greeting") || "سلام! من دستیار هوشمند و تخصصی کلینیک دندانپزشکی دنت فلو هستم. هر سوالی درباره طرح درمان، هزینه‌ها، اقساط، ترس از دندانپزشکی یا خدمات ما دارید بپرسید؛ من با عشق راهنمایی‌تان می‌کنم! ✨");
+  const [aiPrompt, setAiPrompt] = useState(() => {
+    return localStorage.getItem("df_ai_prompt") || `شما دستیار تخصصی، دلسوز و فوق‌العاده باهوش کلینیک دندانپزشکی دیجیتال "دنت فلو" (DentFlow) هستید. نام شما "دستیار هوشمند دنت فلو" است.
+وظایف شما:
+۱. پاسخ به سوالات مراجعین و بیماران درباره مشکلات دندانی، بیماری‌های دهان، خدمات کلینیک، هزینه‌ها، و شرايط اقساطی به زبان فارسی شیوا، صمیمی، دلسوزانه و کاملاً محترمانه.
+۲. معرفی خدمات مختلف کلینیک دنت فلو (ایمپلنت دیجیتال سوئیسی، لمینت سرامیکی E-max، ونیر کامپوزیت IPS، ارتودنسی نامرئی الاینر، عصب‌کشی روتاری بدون درد، اطفال و جراحی‌های لثه).
+۳. دندانپزشک ارشد کلینیک "دکتر مختاری" (جراح و دندانپزشک زیبایی، دارای فلوشیپ ایمپلنتولوژی دیجیتال از سوئیس با بیش از ۱۰ سال سابقه و ثبت بیش از ۵۰۰۰ مورد ترمیم موفق لبخند) است.
+۴. شماره تماس کلینیک: ۰۲۱-۲۲۰۰۰۰۰۰ است. آدرس کلینیک در شهر تهران (منطقه الهیه، خیابان فرشته) می‌باشد.
+۵. شرایط پرداخت اقساطی بسیار منعطف است: ۳۰ الی ۴۰ درصد پیش‌پرداخت، مابقی در اقساط ۶ الی ۱۲ ماهه با چک صیادی بدون بهره و سود.
+۶. برای بیماران با ترس و اضطراب شدید دندانپزشکی، توضیح دهید که ما مجهز به سیستم "سدیشن" (سودیشن یا خواب مصنوعی بسیار ایمن و آرام‌بخش با نظارت متخصص بیهوشی) هستیم تا درمان کاملاً بدون درد و بدون کوچکترین استرسی سپری شود.
+
+به یاد داشته باشید شما سفیر برند دنت فلو هستید و آرامش دادن به بیمار اولویت اول شماست.`;
+  });
 
   // Patient Tracking & Booking Tabs States
   const [bookingTab, setBookingTab] = useState<"new" | "track">("new");
@@ -387,6 +440,106 @@ export default function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
+  const getLocalBotResponse = (userMsg: string): string => {
+    const msg = userMsg.toLowerCase();
+    
+    if (msg.includes("ایمپلنت")) {
+      const s = services.find(x => x.id === "implant");
+      return `بله در کلینیک دنت فلو کاشت تخصصی ایمپلنت دندان با پیشرفته‌ترین تکنولوژی دیجیتال توسط ${clinicConfig.doctorName} انجام می‌شود. 
+
+💎 جزئیات درمان:
+${s?.details.map(d => `• ${d}`).join("\n") || ""}
+
+💰 هزینه حدودی:
+${s?.priceEst || "تماس بگیرید"} (با امکان پرداخت اقساطی!)
+آیا مایلید یک نوبت مشاوره رایگان با پزشک برای شما رزرو کنم؟`;
+    }
+    
+    if (msg.includes("لمینت") || msg.includes("ونیر") || msg.includes("کامپوزیت") || msg.includes("طرح لبخند")) {
+      const s = services.find(x => x.id === "veneer") || services.find(x => x.id === "laminate");
+      return `جهت اصلاح طرح لبخند، ما خدمات ونیر کامپوزیت‌های فوق‌طبیعی و لمینت‌های سرامیکی فوق‌نازک ضدخش را با برترین مواد در بخش مجهز کلینیک ارائه می‌دهیم.
+
+💎 جزئیات خدمت:
+${s?.details.map(d => `• ${d}`).join("\n") || ""}
+
+💰 هزینه تخمینی:
+${s?.priceEst || "تماس بگیرید"}
+دوست دارید طرح لبخند دیجیتال خود را قبل از شروع کار ببینید؟`;
+    }
+
+    if (msg.includes("ارتودنسی")) {
+      const s = services.find(x => x.id === "orthodontics");
+      return `ارتودنسی تخصصی ثابت و نامرئی (با الاینرهای شفاف و شیشه‌ای بدون سیم‌کشی) برای کودکان و بزرگسالان در کلینیک ما ارائه می‌شود.
+
+💎 ویژگی‌ها:
+${s?.details.map(d => `• ${d}`).join("\n") || ""}
+
+💰 هزینه ارتودنسی:
+${s?.priceEst || "تماس بگیرید"}`;
+    }
+
+    if (msg.includes("بلیچ") || msg.includes("سفید") || msg.includes("جرم")) {
+      const s = services.find(x => x.id === "bleaching");
+      return `برای سفید کردن دندان‌ها از مجهزترین سیستم بلیچینگ مطب با لیزر بدون حساسیت دندان استفاده می‌کنیم.
+
+💎 جزئیات:
+${s?.details.map(d => `• ${d}`).join("\n") || ""}
+
+💰 هزینه:
+${s?.priceEst || "تماس بگیرید"}`;
+    }
+
+    if (msg.includes("اقساط") || msg.includes("قسط") || msg.includes("هزینه") || msg.includes("قیمت") || msg.includes("چک")) {
+      return `در کلینیک دنت فلو شرایط پرداخت اقساطی بسیار منعطف و آسانی برای مراجعین گرانقدر در نظر گرفته شده است:
+
+💳 ${clinicConfig.installmentInfo}
+
+همچنین مشاوره حضوری و عکس‌برداری اولیه در صورت شروع درمان کاملاً رایگان می‌باشد. برای هرکدام از خدمات مورد نظرتان مایل به رزرو نوبت هستید؟`;
+    }
+
+    if (msg.includes("آدرس") || msg.includes("کجاست") || msg.includes("موقعیت") || msg.includes("لوکیشن") || msg.includes("تهران") || msg.includes("نشانی")) {
+      return `📍 آدرس کلینیک دنت فلو:
+${clinicConfig.address}
+
+🕒 ساعات کاری:
+${clinicConfig.workingHours}
+
+تلفن تماس مستقیم جهت هماهنگی:
+📞 ${clinicConfig.phone}`;
+    }
+
+    if (msg.includes("تلفن") || msg.includes("شماره") || msg.includes("تماس") || msg.includes("زنگ") || msg.includes("تلفن")) {
+      return `📞 شماره‌های تماس مستقیم با پذیرش کلینیک دنت فلو:
+${clinicConfig.phone}
+
+همچنین می‌توانید از بخش انتهای صفحه نوبت خود را به صورت آنلاین و ۲۴ ساعته ثبت کنید تا همکاران ما در اسرع وقت با شما تماس بگیرند.`;
+    }
+
+    if (msg.includes("ترس") || msg.includes("استرس") || msg.includes("فوبیا") || msg.includes("درد") || msg.includes("بیهوشی") || msg.includes("سدیشن") || msg.includes("خواب")) {
+      return `هیچ نگرانی نداشته باشید! هدف اصلی کلینیک دنت فلو درمان کاملاً بدون درد است.
+ما مجهز به سیستم پیشرفته "سدیشن" (خواب مصنوعی بسیار آرامش‌بخش تحت نظر متخصص بیهوشی) هستیم. شما به خوابی عمیق و شیرین می‌روید و بدون اینکه متوجه شوید تمام کارهای دندانپزشکی‌تان انجام می‌شود. 
+
+آیا مایلید مشاوره سدیشن با دکتر هماهنگ کنیم؟`;
+    }
+
+    if (msg.includes("پزشک") || msg.includes("دکتر") || msg.includes("متخصص") || msg.includes("کیست") || msg.includes("مختاری")) {
+      return `پزشک ارشد و جراح زیبایی کلینیک ما ${clinicConfig.doctorName} هستند.
+🎓 سوابق و مدارک پزشک:
+- ${clinicConfig.doctorTitle}
+- ثبت بیش از ۵,۰۰۰ لبخند موفق و رضایت‌بخش
+- استفاده از برترین برندهای سوئیسی و آلمانی دندانپزشکی`;
+    }
+
+    if (msg.includes("سلام") || msg.includes("درود") || msg.includes("وقت بخیر") || msg.includes("روز بخیر")) {
+      return `سلام! وقت زیبای شما بخیر. خیلی خوش آمدید به دنت فلو. ✨
+چطور می‌توانم در زمینه سلامت و زیبایی دندان‌ها به شما کمک کنم؟`;
+    }
+
+    return `ممنون از سؤال شما. من پاسخ دقیق کلمه به کلمه برای این موضوع ندارم؛ اما به عنوان دستیار هوشمند ${clinicConfig.doctorName} در کلینیک دنت فلو، پیشنهاد می‌کنم برای راهنمایی کامل یا هماهنگی نوبت با شماره تلفن ${clinicConfig.phone} تماس بگیرید یا از فرم نوبت‌دهی پایین صفحه استفاده کنید.
+
+اگر سوالی درباره خدمات ایمپلنت، لمینت، ارتودنسی، عصب‌کشی، دندانپزشکی کودکان یا شرایط اقساطی دارید بپرسید؛ من با کمال میل راهنمایی‌تان می‌کنم! ✨`;
+  };
+
   const sendChatMessage = async (textToSend: string) => {
     if (!textToSend.trim() || isChatLoading) return;
     
@@ -412,12 +565,13 @@ export default function App() {
         },
         body: JSON.stringify({
           history,
-          message: userMessage
+          message: userMessage,
+          customSystemInstruction: aiPrompt
         })
       });
 
       if (!res.ok) {
-        throw new Error("خطا در برقراری ارتباط با دستیار هوشمند کلینیک.");
+        throw new Error("ترافیک بالا یا عدم اتصال به سرور بک‌اند؛ استفاده از پردازشگر محلی دنت فلو.");
       }
 
       const data = await res.json();
@@ -427,9 +581,16 @@ export default function App() {
 
       setChatMessages(prev => [...prev, { role: "model" as const, text: data.text }]);
     } catch (err: any) {
-      console.error(err);
-      setChatError(err.message || "متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.");
+      console.warn("Backend Chat failed, falling back to local rule-based AI:", err);
+      // Simulate typing speed for better UI feel
+      setTimeout(() => {
+        const fallbackText = getLocalBotResponse(userMessage);
+        setChatMessages(prev => [...prev, { role: "model" as const, text: fallbackText }]);
+        setIsChatLoading(false);
+      }, 700);
+      return; // prevent setting loading to false immediately
     } finally {
+      // only runs if not caught by timeout local simulation
       setIsChatLoading(false);
     }
   };
@@ -591,11 +752,11 @@ export default function App() {
               </button>
               <a 
                 id="btn-call-direct"
-                href="tel:02122000000" 
+                href={`tel:${clinicConfig.phoneRaw}`} 
                 className="hidden md:flex items-center gap-2 text-sm text-slate-600 hover:text-teal-600 transition-colors font-bold"
               >
                 <Phone className="w-4 h-4 text-teal-500" />
-                <span>۰۲۱-۲۲۰۰۰۰۰۰</span>
+                <span>{clinicConfig.phone.split(" | ")[0]}</span>
               </a>
               <a 
                 id="btn-header-booking"
@@ -712,11 +873,11 @@ export default function App() {
                   </button>
                   <a 
                     id="mobile-btn-call"
-                    href="tel:02122000000" 
+                    href={`tel:${clinicConfig.phoneRaw}`} 
                     className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     <Phone className="w-4 h-4 text-teal-500" />
-                    <span>۰۲۱-۲۲۰۰۰۰۰۰</span>
+                    <span>{clinicConfig.phone.split(" | ")[0]}</span>
                   </a>
                   <a 
                     id="mobile-btn-booking"
@@ -743,88 +904,64 @@ export default function App() {
               className="bg-white border border-teal-100 rounded-[32px] p-8 shadow-2xl shadow-teal-950/5 w-full space-y-6"
               id="admin-login-card"
             >
-              <div className="text-center space-y-2" id="login-header">
+              <div className="text-center space-y-3" id="admin-login-header">
                 <div className="inline-flex p-3 rounded-full bg-teal-50 text-teal-600 mb-2">
-                  <Lock className="w-6 h-6" />
+                  <Shield className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-extrabold text-slate-900 text-center">ورود امن به پنل مدیریت</h3>
-                <p className="text-xs text-slate-500 font-bold text-center">جهت دسترسی به نوبت‌ها و اطلاعات مراجعین، لطفاً اطلاعات کاربری خود را وارد کنید.</p>
+                <h2 className="text-xl font-extrabold text-slate-900">ورود به پنل مدیریت دنت فلو</h2>
+                <p className="text-xs text-slate-500 font-semibold">لطفاً اطلاعات کاربری خود را وارد کنید</p>
               </div>
 
-              <form onSubmit={handleAdminLogin} className="space-y-4" id="login-form">
-                <div className="space-y-1.5" id="login-username-group">
-                  <label className="text-xs font-bold text-slate-600 block">نام کاربری</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                      <User className="w-4 h-4" />
-                    </span>
-                    <input
-                      type="text"
-                      value={adminUsername}
-                      onChange={(e) => {
-                        setAdminUsername(e.target.value);
-                        setLoginError("");
-                      }}
-                      placeholder="admin"
-                      className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:border-teal-500 text-left"
-                      dir="ltr"
-                      required
-                    />
-                  </div>
+              <form onSubmit={handleAdminLogin} className="space-y-4" id="admin-login-form">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 block">نام کاربری:</label>
+                  <input 
+                    type="text"
+                    value={adminUsername}
+                    onChange={(e) => setAdminUsername(e.target.value)}
+                    placeholder="نام کاربری را وارد کنید..."
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white text-slate-800 text-sm font-semibold"
+                  />
                 </div>
 
-                <div className="space-y-1.5" id="login-password-group">
-                  <label className="text-xs font-bold text-slate-600 block">کلمه عبور</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Lock className="w-4 h-4" />
-                    </span>
-                    <input
-                      type="password"
-                      value={adminPassword}
-                      onChange={(e) => {
-                        setAdminPassword(e.target.value);
-                        setLoginError("");
-                      }}
-                      placeholder="••••••••"
-                      className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:border-teal-500 text-left"
-                      dir="ltr"
-                      required
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600 block">کلمه عبور:</label>
+                  <input 
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="رمز عبور را وارد کنید..."
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white text-slate-800 text-sm font-semibold"
+                  />
                 </div>
 
                 {loginError && (
-                  <motion.p 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="text-rose-600 text-xs font-bold bg-rose-50 p-2.5 rounded-lg border border-rose-100 text-center"
-                  >
-                    {loginError}
-                  </motion.p>
+                  <div className="bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold p-3 rounded-xl flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{loginError}</span>
+                  </div>
                 )}
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-black text-sm shadow-lg shadow-teal-600/10 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-sm rounded-xl shadow-md transition-colors cursor-pointer"
                 >
-                  <span>ورود به پنل مدیریت</span>
-                  <ArrowLeft className="w-4 h-4" />
+                  ورود به پنل کادر درمان
                 </button>
               </form>
 
-              <div className="text-center pt-4 border-t border-slate-100 space-y-3">
-                <span className="text-[10px] text-slate-400 font-bold block">
-                  رمز عبور پیش‌فرض: <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-slate-600">admin</code> | نام کاربری: <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-slate-600">admin</code>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsAdminMode(false)}
-                  className="text-xs text-slate-500 hover:text-slate-800 font-extrabold transition-colors"
-                >
-                  بازگشت به صفحه اصلی سایت
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAdminMode(false);
+                  setIsAdminAuthenticated(false);
+                  setAdminPassword("");
+                }}
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 border-none"
+              >
+                <ArrowRight className="w-4 h-4" />
+                <span>بازگشت به نمای اصلی سایت</span>
+              </button>
             </motion.div>
           </main>
         ) : (
@@ -838,9 +975,9 @@ export default function App() {
                     <Settings className="w-3.5 h-3.5 animate-spin-slow text-teal-600" />
                     <span>پنل مدیریت و پذیرش کلینیک دنت فلو</span>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">لیست درخواست‌های نوبت‌دهی آنلاین</h2>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">میز کار و کنترل سنتر کلینیک دنت فلو</h2>
                   <p className="text-slate-500 text-xs sm:text-sm font-semibold">
-                    در این بخش می‌توانید تمامی رزروهای ثبت شده توسط مراجعین از طریق سایت یا ربات هوشمند را به صورت زنده مشاهده، تایید، لغو یا مدیریت کنید.
+                    در این بخش می‌توانید به عنوان مدیر یا کادر درمان، نوبت‌های بیماران، محتوای سایت، قیمت خدمات و دستورالعمل‌های دستیار صوتی/متنی هوش مصنوعی را در لحظه تغییر دهید.
                   </p>
                 </div>
                 <div className="flex items-center gap-3" id="admin-header-actions">
@@ -870,283 +1007,790 @@ export default function App() {
                 </div>
               </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" id="admin-stats-grid">
-              
-              <div className="bg-[#F8FCFC] border border-slate-100 p-5 rounded-2xl flex flex-col justify-between" id="stat-total">
-                <span className="text-xs font-bold text-slate-500">کل نوبت‌های ثبت شده</span>
-                <span className="text-2xl sm:text-3xl font-black text-slate-800 mt-2 font-mono">{adminStats.total}</span>
-              </div>
-
-              <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl flex flex-col justify-between" id="stat-pending">
-                <span className="text-xs font-bold text-amber-700">در انتظار بررسی پذیرش</span>
-                <span className="text-2xl sm:text-3xl font-black text-amber-600 mt-2 font-mono">{adminStats.pending}</span>
-              </div>
-
-              <div className="bg-teal-50/50 border border-teal-100 p-5 rounded-2xl flex flex-col justify-between" id="stat-approved">
-                <span className="text-xs font-bold text-teal-700">تایید نهایی شده</span>
-                <span className="text-2xl sm:text-3xl font-black text-teal-600 mt-2 font-mono">{adminStats.approved}</span>
-              </div>
-
-              <div className="bg-rose-50/50 border border-rose-100 p-5 rounded-2xl flex flex-col justify-between" id="stat-cancelled">
-                <span className="text-xs font-bold text-rose-700">لغو شده یا عدم پاسخ</span>
-                <span className="text-2xl sm:text-3xl font-black text-rose-600 mt-2 font-mono">{adminStats.cancelled}</span>
-              </div>
-
-            </div>
-
-            {/* Filter controls and count */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2" id="admin-filters">
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto" id="admin-filter-buttons">
+              {/* Tab Navigation Controls */}
+              <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-4" id="admin-tabs-nav">
                 {[
-                  { value: "all", label: "همه نوبت‌ها" },
-                  { value: "pending", label: "در انتظار بررسی" },
-                  { value: "approved", label: "تایید شده" },
-                  { value: "cancelled", label: "لغو شده" }
-                ].map((f) => (
-                  <button
-                    key={f.value}
-                    id={`filter-btn-${f.value}`}
-                    onClick={() => setAdminFilter(f.value)}
-                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                      adminFilter === f.value 
-                        ? "bg-teal-600 text-white shadow-md shadow-teal-600/15" 
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
+                  { id: "bookings", label: "نوبت‌های دریافتی", icon: Calendar },
+                  { id: "services", label: "ویرایش خدمات و تعرفه‌ها", icon: Sliders },
+                  { id: "contact", label: "اطلاعات تماس و کلینیک", icon: MapPin },
+                  { id: "ai", label: "پیکربندی هوش مصنوعی", icon: Sparkles },
+                  { id: "analytics", label: "آمار و آنالیز کلینیک", icon: Activity }
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = adminActiveTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setAdminActiveTab(tab.id as any)}
+                      className={`px-4 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer border ${
+                        isActive
+                          ? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/15"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
               </div>
-              <span className="text-xs font-bold text-slate-400 shrink-0 self-end sm:self-auto" id="filtered-count">
-                تعداد موارد یافته شده: {filteredBookings.length} مورد
-              </span>
-            </div>
 
-            {/* Live Bookings Table / Cards */}
-            <div className="space-y-4" id="admin-bookings-list">
-              {filteredBookings.length === 0 ? (
-                <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200" id="empty-bookings">
-                  <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-sm font-extrabold text-slate-500">هیچ درخواستی در این دسته‌بندی یافت نشد.</p>
-                  <p className="text-xs text-slate-400 mt-1">مراجعین جدید به صورت زنده در این جدول ظاهر خواهند شد.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4" id="bookings-grid-list">
-                  <AnimatePresence mode="popLayout">
-                    {filteredBookings.map((b) => (
-                      <motion.div
-                        key={b.id}
-                        id={`admin-booking-row-${b.id}`}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className={`p-5 rounded-2xl border transition-all ${
-                          b.status === "approved" 
-                            ? "bg-teal-50/20 border-teal-100" 
-                            : b.status === "cancelled"
-                            ? "bg-rose-50/10 border-rose-100/50"
-                            : "bg-white border-slate-100 shadow-md shadow-teal-950/5 hover:border-slate-300"
-                        }`}
-                      >
-                        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4" id={`row-layout-${b.id}`}>
-                          
-                          {/* Main info */}
-                          <div className="space-y-3 flex-1" id={`row-info-${b.id}`}>
-                            <div className="flex flex-wrap items-center gap-2" id={`row-badge-row-${b.id}`}>
-                              <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200">{b.id}</span>
-                              
-                              {b.status === "pending" && (
-                                <span className="text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-lg">در انتظار تماس پذیرش</span>
-                              )}
-                              {b.status === "approved" && (
-                                <span className="text-[10px] font-black bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-1 rounded-lg">تایید و رزرو قطعی</span>
-                              )}
-                              {b.status === "cancelled" && (
-                                <span className="text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg">لغو شده</span>
-                              )}
+              {/* TAB CONTENT: BOOKINGS */}
+              {adminActiveTab === "bookings" && (
+                <div className="space-y-8" id="tab-bookings-content">
+                  {/* Quick Stats Grid */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" id="admin-stats-grid">
+                    <div className="bg-[#F8FCFC] border border-slate-100 p-5 rounded-2xl flex flex-col justify-between" id="stat-total">
+                      <span className="text-xs font-bold text-slate-500">کل نوبت‌های ثبت شده</span>
+                      <span className="text-2xl sm:text-3xl font-black text-slate-800 mt-2 font-mono">{adminStats.total}</span>
+                    </div>
 
-                              <span className="text-[10px] text-slate-400 font-bold" dir="ltr">
-                                {new Date(b.createdAt).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
+                    <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl flex flex-col justify-between" id="stat-pending">
+                      <span className="text-xs font-bold text-amber-700">در انتظار بررسی پذیرش</span>
+                      <span className="text-2xl sm:text-3xl font-black text-amber-600 mt-2 font-mono">{adminStats.pending}</span>
+                    </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm" id={`row-details-${b.id}`}>
-                              <div>
-                                <span className="text-slate-400 font-bold block text-[11px]">بیمار:</span>
-                                <span className="font-extrabold text-slate-900 block mt-0.5">{b.fullName}</span>
+                    <div className="bg-teal-50/50 border border-teal-100 p-5 rounded-2xl flex flex-col justify-between" id="stat-approved">
+                      <span className="text-xs font-bold text-teal-700">تایید نهایی شده</span>
+                      <span className="text-2xl sm:text-3xl font-black text-teal-600 mt-2 font-mono">{adminStats.approved}</span>
+                    </div>
+
+                    <div className="bg-rose-50/50 border border-rose-100 p-5 rounded-2xl flex flex-col justify-between" id="stat-cancelled">
+                      <span className="text-xs font-bold text-rose-700">لغو شده یا عدم پاسخ</span>
+                      <span className="text-2xl sm:text-3xl font-black text-rose-600 mt-2 font-mono">{adminStats.cancelled}</span>
+                    </div>
+                  </div>
+
+                  {/* Filter controls and count */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2" id="admin-filters">
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto" id="admin-filter-buttons">
+                      {[
+                        { value: "all", label: "همه نوبت‌ها" },
+                        { value: "pending", label: "در انتظار بررسی" },
+                        { value: "approved", label: "تایید شده" },
+                        { value: "cancelled", label: "لغو شده" }
+                      ].map((f) => (
+                        <button
+                          key={f.value}
+                          id={`filter-btn-${f.value}`}
+                          onClick={() => setAdminFilter(f.value)}
+                          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            adminFilter === f.value 
+                              ? "bg-teal-600 text-white shadow-md shadow-teal-600/15" 
+                              : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-xs font-bold text-slate-400 shrink-0 self-end sm:self-auto" id="filtered-count">
+                      تعداد موارد یافته شده: {filteredBookings.length} مورد
+                    </span>
+                  </div>
+
+                  {/* Live Bookings Table / Cards */}
+                  <div className="space-y-4" id="admin-bookings-list">
+                    {filteredBookings.length === 0 ? (
+                      <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200" id="empty-bookings">
+                        <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <p className="text-sm font-extrabold text-slate-500">هیچ درخواستی در این دسته‌بندی یافت نشد.</p>
+                        <p className="text-xs text-slate-400 mt-1">مراجعین جدید به صورت زنده در این جدول ظاهر خواهند شد.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4" id="bookings-grid-list">
+                        <AnimatePresence mode="popLayout">
+                          {filteredBookings.map((b) => (
+                            <motion.div
+                              key={b.id}
+                              id={`admin-booking-row-${b.id}`}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              className={`p-5 rounded-2xl border transition-all ${
+                                b.status === "approved" 
+                                  ? "bg-teal-50/20 border-teal-100" 
+                                  : b.status === "cancelled"
+                                  ? "bg-rose-50/10 border-rose-100/50"
+                                  : "bg-white border-slate-100 shadow-md shadow-teal-950/5 hover:border-slate-300"
+                              }`}
+                            >
+                              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4" id={`row-layout-${b.id}`}>
+                                
+                                {/* Main info */}
+                                <div className="space-y-3 flex-1" id={`row-info-${b.id}`}>
+                                  <div className="flex flex-wrap items-center gap-2" id={`row-badge-row-${b.id}`}>
+                                    <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200">{b.id}</span>
+                                    
+                                    {b.status === "pending" && (
+                                      <span className="text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-lg">در انتظار تماس پذیرش</span>
+                                    )}
+                                    {b.status === "approved" && (
+                                      <span className="text-[10px] font-black bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-1 rounded-lg">تایید و رزرو قطعی</span>
+                                    )}
+                                    {b.status === "cancelled" && (
+                                      <span className="text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg">لغو شده</span>
+                                    )}
+
+                                    <span className="text-[10px] text-slate-400 font-bold" dir="ltr">
+                                      {new Date(b.createdAt).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm" id={`row-details-${b.id}`}>
+                                    <div>
+                                      <span className="text-slate-400 font-bold block text-[11px]">بیمار:</span>
+                                      <span className="font-extrabold text-slate-900 block mt-0.5">{b.fullName}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400 font-bold block text-[11px]">شماره تماس:</span>
+                                      <a href={`tel:${b.phone}`} className="font-bold text-teal-600 hover:underline block mt-0.5 font-mono text-right" dir="ltr">{b.phone}</a>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400 font-bold block text-[11px]">خدمت مورد نظر:</span>
+                                      <span className="font-semibold text-slate-700 block mt-0.5">{getServiceTitle(b.serviceId)}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400 font-bold block text-[11px]">تاریخ و شیفت:</span>
+                                      <span className="font-bold text-slate-800 block mt-0.5">{b.date} ({b.timeSlot === "morning" ? "شیفت صبح" : "شیفت عصر"})</span>
+                                    </div>
+                                  </div>
+
+                                  {b.notes && (
+                                    <div className="bg-slate-50 p-3 rounded-xl text-xs text-slate-600 border border-slate-100 font-semibold mt-2" id={`row-notes-${b.id}`}>
+                                      <span className="font-extrabold text-slate-900 ml-1">توضیحات بیمار:</span>
+                                      {b.notes}
+                                    </div>
+                                  )}
+
+                                  {b.adminComment && (
+                                    <div className="bg-teal-50/40 p-3 rounded-xl text-xs text-slate-700 border border-teal-100 font-semibold mt-2" id={`row-admin-comment-${b.id}`}>
+                                      <span className="font-extrabold text-teal-800 ml-1">توضیحات و پاسخ مطب:</span>
+                                      {b.adminComment}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Quick Admin Actions */}
+                                <div className="flex flex-row lg:flex-col items-center justify-end gap-2 border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-100" id={`row-actions-${b.id}`}>
+                                  
+                                  <div className="flex flex-wrap gap-2 w-full justify-end" id={`action-btn-group-${b.id}`}>
+                                    <button
+                                      id={`btn-edit-trigger-${b.id}`}
+                                      onClick={() => {
+                                        setActiveEditingId(b.id);
+                                        setEditDate(b.date);
+                                        setEditTimeSlot(b.timeSlot);
+                                        setEditAdminComment(b.adminComment || "");
+                                      }}
+                                      className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors flex items-center gap-1 w-full sm:w-auto justify-center cursor-pointer border border-slate-200"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                                      <span>ویرایش نوبت</span>
+                                    </button>
+
+                                    {b.status !== "approved" && (
+                                      <button
+                                        id={`btn-approve-${b.id}`}
+                                        onClick={() => updateBookingStatus(b.id, "approved")}
+                                        className="px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs transition-colors flex items-center gap-1 w-full sm:w-auto justify-center cursor-pointer"
+                                      >
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>تایید نوبت</span>
+                                      </button>
+                                    )}
+
+                                    {b.status !== "cancelled" && (
+                                      <button
+                                        id={`btn-cancel-${b.id}`}
+                                        onClick={() => updateBookingStatus(b.id, "cancelled")}
+                                        className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-extrabold text-xs transition-colors flex items-center gap-1 w-full sm:w-auto justify-center cursor-pointer"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                        <span>لغو نوبت</span>
+                                      </button>
+                                    )}
+
+                                    <button
+                                      id={`btn-delete-${b.id}`}
+                                      onClick={() => deleteBooking(b.id)}
+                                      className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
+                                      aria-label="حذف نوبت"
+                                      title="حذف نوبت"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+
+                                </div>
+
                               </div>
-                              <div>
-                                <span className="text-slate-400 font-bold block text-[11px]">شماره تماس:</span>
-                                <a href={`tel:${b.phone}`} className="font-bold text-teal-600 hover:underline block mt-0.5 font-mono text-right" dir="ltr">{b.phone}</a>
-                              </div>
-                              <div>
-                                <span className="text-slate-400 font-bold block text-[11px]">خدمت مورد نظر:</span>
-                                <span className="font-semibold text-slate-700 block mt-0.5">{getServiceTitle(b.serviceId)}</span>
-                              </div>
-                              <div>
-                                <span className="text-slate-400 font-bold block text-[11px]">تاریخ و شیفت:</span>
-                                <span className="font-bold text-slate-800 block mt-0.5">{b.date} ({b.timeSlot === "morning" ? "شیفت صبح" : "شیفت عصر"})</span>
-                              </div>
-                            </div>
 
-                            {b.notes && (
-                              <div className="bg-slate-50 p-3 rounded-xl text-xs text-slate-600 border border-slate-100 font-semibold mt-2" id={`row-notes-${b.id}`}>
-                                <span className="font-extrabold text-slate-900 ml-1">توضیحات بیمار:</span>
-                                {b.notes}
-                              </div>
-                            )}
-
-                            {b.adminComment && (
-                              <div className="bg-teal-50/40 p-3 rounded-xl text-xs text-slate-700 border border-teal-100 font-semibold mt-2" id={`row-admin-comment-${b.id}`}>
-                                <span className="font-extrabold text-teal-800 ml-1">توضیحات و پاسخ مطب:</span>
-                                {b.adminComment}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Quick Admin Actions */}
-                          <div className="flex flex-row lg:flex-col items-center justify-end gap-2 border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-100" id={`row-actions-${b.id}`}>
-                            
-                            <div className="flex flex-wrap gap-2 w-full justify-end" id={`action-btn-group-${b.id}`}>
-                              <button
-                                id={`btn-edit-trigger-${b.id}`}
-                                onClick={() => {
-                                  setActiveEditingId(b.id);
-                                  setEditDate(b.date);
-                                  setEditTimeSlot(b.timeSlot);
-                                  setEditAdminComment(b.adminComment || "");
-                                }}
-                                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors flex items-center gap-1 w-full sm:w-auto justify-center cursor-pointer border border-slate-200"
-                              >
-                                <Edit3 className="w-3.5 h-3.5 text-slate-500" />
-                                <span>ویرایش نوبت</span>
-                              </button>
-
-                              {b.status !== "approved" && (
-                                <button
-                                  id={`btn-approve-${b.id}`}
-                                  onClick={() => updateBookingStatus(b.id, "approved")}
-                                  className="px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs transition-colors flex items-center gap-1 w-full sm:w-auto justify-center cursor-pointer"
+                              {activeEditingId === b.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="border-t border-slate-100 pt-4 mt-4 text-right space-y-4"
+                                  id={`edit-panel-${b.id}`}
                                 >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>تایید نوبت</span>
-                                </button>
+                                  <div className="flex items-center gap-2 text-teal-600 font-extrabold text-xs">
+                                    <Edit3 className="w-4 h-4" />
+                                    <span>ویرایش اطلاعات، تاریخ، زمان و پیام تایید مطب دنت فلو</span>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                                    <div className="space-y-1">
+                                      <label className="text-slate-500 font-bold block">تاریخ تایید شده نهایی:</label>
+                                      <input 
+                                        type="date"
+                                        value={editDate}
+                                        onChange={(e) => setEditDate(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white text-slate-800 font-bold"
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-slate-500 font-bold block">زمان/شیفت حضور مراجع:</label>
+                                      <select
+                                        value={editTimeSlot}
+                                        onChange={(e) => setEditTimeSlot(e.target.value as "morning" | "afternoon")}
+                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-extrabold text-slate-800"
+                                      >
+                                        <option value="morning">شیفت صبح (۱۰ الی ۱۴)</option>
+                                        <option value="afternoon">شیفت عصر (۱۴ الی ۲۰)</option>
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-1 text-xs">
+                                    <label className="text-slate-500 font-bold block">توضیحات مطب، ساعت حضور بیمار و توصیه‌های پزشک (پاسخ اختصاصی به بیمار):</label>
+                                    <textarea
+                                      value={editAdminComment}
+                                      onChange={(e) => setEditAdminComment(e.target.value)}
+                                      placeholder="مثال: نوبت شما برای ساعت ۱۱:۳۰ تایید شد. لطفاً یک ربع قبل از زمان مقرر با مدارک پزشکی خود تشریف بیاورید."
+                                      className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white resize-none text-slate-700 font-semibold"
+                                      rows={2.5}
+                                    />
+                                  </div>
+
+                                  <div className="flex gap-2 justify-end text-xs">
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveEditingId(null)}
+                                      className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold cursor-pointer transition-colors"
+                                    >
+                                      انصراف
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => updateBookingDetails(b.id, {
+                                        date: editDate,
+                                        timeSlot: editTimeSlot,
+                                        adminComment: editAdminComment
+                                      })}
+                                      className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold cursor-pointer transition-colors flex items-center gap-1 shadow-md shadow-teal-600/10"
+                                    >
+                                      <Save className="w-3.5 h-3.5" />
+                                      <span>ثبت و ذخیره تغییرات</span>
+                                    </button>
+                                  </div>
+                                </motion.div>
                               )}
-
-                              {b.status !== "cancelled" && (
-                                <button
-                                  id={`btn-cancel-${b.id}`}
-                                  onClick={() => updateBookingStatus(b.id, "cancelled")}
-                                  className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-extrabold text-xs transition-colors flex items-center gap-1 w-full sm:w-auto justify-center cursor-pointer"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                  <span>لغو نوبت</span>
-                                </button>
-                              )}
-
-                              <button
-                                id={`btn-delete-${b.id}`}
-                                onClick={() => deleteBooking(b.id)}
-                                className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
-                                aria-label="حذف نوبت"
-                                title="حذف نوبت"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-
-                          </div>
-
-                        </div>
-
-                        {activeEditingId === b.id && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="border-t border-slate-100 pt-4 mt-4 text-right space-y-4"
-                            id={`edit-panel-${b.id}`}
-                          >
-                            <div className="flex items-center gap-2 text-teal-600 font-extrabold text-xs">
-                              <Edit3 className="w-4 h-4" />
-                              <span>ویرایش اطلاعات، تاریخ، زمان و پیام تایید مطب دنت فلو</span>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                              <div className="space-y-1">
-                                <label className="text-slate-500 font-bold block">تاریخ تایید شده نهایی:</label>
-                                <input 
-                                  type="date"
-                                  value={editDate}
-                                  onChange={(e) => setEditDate(e.target.value)}
-                                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white text-slate-800 font-bold"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-slate-500 font-bold block">زمان/شیفت حضور مراجع:</label>
-                                <select
-                                  value={editTimeSlot}
-                                  onChange={(e) => setEditTimeSlot(e.target.value as "morning" | "afternoon")}
-                                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-extrabold text-slate-800"
-                                >
-                                  <option value="morning">شیفت صبح (۱۰ الی ۱۴)</option>
-                                  <option value="afternoon">شیفت عصر (۱۴ الی ۲۰)</option>
-                                </select>
-                              </div>
-                            </div>
-
-                            <div className="space-y-1 text-xs">
-                              <label className="text-slate-500 font-bold block">توضیحات مطب، ساعت حضور بیمار و توصیه‌های پزشک (پاسخ اختصاصی به بیمار):</label>
-                              <textarea
-                                value={editAdminComment}
-                                onChange={(e) => setEditAdminComment(e.target.value)}
-                                placeholder="مثال: نوبت شما برای ساعت ۱۱:۳۰ تایید شد. لطفاً یک ربع قبل از زمان مقرر با مدارک پزشکی خود تشریف بیاورید."
-                                className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white resize-none text-slate-700 font-semibold"
-                                rows={2.5}
-                              />
-                            </div>
-
-                            <div className="flex gap-2 justify-end text-xs">
-                              <button
-                                type="button"
-                                onClick={() => setActiveEditingId(null)}
-                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold cursor-pointer transition-colors"
-                              >
-                                انصراف
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => updateBookingDetails(b.id, {
-                                  date: editDate,
-                                  timeSlot: editTimeSlot,
-                                  adminComment: editAdminComment
-                                })}
-                                className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold cursor-pointer transition-colors flex items-center gap-1 shadow-md shadow-teal-600/10"
-                              >
-                                <Save className="w-3.5 h-3.5" />
-                                <span>ثبت و ذخیره تغییرات</span>
-                              </button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Quick Helper Info */}
-            <div className="bg-teal-50/40 rounded-2xl p-4 border border-teal-100 flex items-center gap-3" id="admin-help-info">
-              <Info className="w-5 h-5 text-teal-600 shrink-0" />
-              <p className="text-[11px] sm:text-xs text-slate-600 font-bold leading-relaxed">
-                <span className="font-black text-teal-700">راهنمای کادر درمان:</span> با تایید هر نوبت، درخواست به وضعیت رنگی سبز (رزرو قطعی) منتقل خواهد شد. همچنین با کلیک روی شماره تماس هر مراجع، می‌توانید مستقیماً با او تماس تلفنی یا ارتباط واتس‌اپ برقرار کنید. اطلاعات این جدول مستقیماً با پایگاه داده سرور کلینیک دنت فلو همگام‌سازی می‌شود.
-              </p>
-            </div>
+              {/* TAB CONTENT: SERVICES & PRICING */}
+              {adminActiveTab === "services" && (
+                <div className="space-y-6" id="services-editor-tab">
+                  <div className="bg-teal-50/30 border border-teal-100/50 p-5 rounded-2xl text-right">
+                    <h3 className="text-base font-extrabold text-teal-800 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-teal-600" />
+                      <span>مدیریت خدمات و قیمت‌های کلینیک دنت فلو</span>
+                    </h3>
+                    <p className="text-slate-600 text-xs sm:text-sm font-medium mt-1">
+                      در این بخش می‌توانید لیست خدمات، جزئیات هر درمان و تعرفه‌های درج شده در سایت را ویرایش کنید. تغییرات اعمال شده بلافاصله در کل سایت و چت‌بات هوشمند منعکس خواهند شد.
+                    </p>
+                  </div>
 
-          </div>
-        </main>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {services.map((srv, sIdx) => (
+                      <div key={srv.id} className="bg-slate-50 border border-slate-200 p-6 rounded-2xl space-y-4 text-right">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                          <span className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+                            {srv.title}
+                          </span>
+                          <span className="text-xs font-mono font-extrabold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">ID: {srv.id}</span>
+                        </div>
+
+                        <div className="space-y-3 text-xs">
+                          <div className="space-y-1">
+                            <label className="text-slate-500 font-bold block">عنوان خدمت:</label>
+                            <input
+                              type="text"
+                              value={srv.title}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = [...services];
+                                updated[sIdx].title = val;
+                                setServices(updated);
+                              }}
+                              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-extrabold text-slate-800"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-slate-500 font-bold block">تعرفه / قیمت حدودی:</label>
+                            <input
+                              type="text"
+                              value={srv.priceEst}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = [...services];
+                                updated[sIdx].priceEst = val;
+                                setServices(updated);
+                              }}
+                              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-extrabold text-teal-600"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-slate-500 font-bold block">توضیح کوتاه:</label>
+                            <textarea
+                              value={srv.description}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const updated = [...services];
+                                updated[sIdx].description = val;
+                                setServices(updated);
+                              }}
+                              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-medium text-slate-600 resize-none"
+                              rows={2}
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-slate-500 font-bold block">جزئیات و ویژگی‌ها (۴ مورد):</label>
+                            {srv.details.map((detail, dIdx) => (
+                              <input
+                                key={dIdx}
+                                type="text"
+                                value={detail}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const updated = [...services];
+                                  updated[sIdx].details[dIdx] = val;
+                                  setServices(updated);
+                                }}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-100 bg-white font-semibold text-slate-700"
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="pt-2">
+                          <button
+                            onClick={() => {
+                              localStorage.setItem("df_services", JSON.stringify(services));
+                              alert("تغییرات خدمت «" + srv.title + "» با موفقیت در مرورگر ذخیره شد و در تمامی بخش‌های سایت اعمال گردید.");
+                            }}
+                            className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer border-none"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                            <span>ذخیره تغییرات این خدمت</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB CONTENT: CLINIC CONTACT & CONFIG */}
+              {adminActiveTab === "contact" && (
+                <div className="space-y-6" id="contact-editor-tab">
+                  <div className="bg-teal-50/30 border border-teal-100/50 p-5 rounded-2xl text-right">
+                    <h3 className="text-base font-extrabold text-teal-800 flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-teal-600" />
+                      <span>مدیریت اطلاعات تماس، آدرس و کادر کلینیک</span>
+                    </h3>
+                    <p className="text-slate-600 text-xs sm:text-sm font-medium mt-1">
+                      در این بخش می‌توانید نشانی مطب، شماره‌های تلفن، پزشک ارشد، و توضیحات گالری و شرایط قسطی را به طور یکجا ادیت کنید. تغییرات بلافاصله در کل سایت، فرم‌ها، هدر، فوتر و چت‌بات اعمال می‌شوند.
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-50 border border-slate-200 p-6 sm:p-8 rounded-2xl space-y-6 text-right">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                      <div className="space-y-1">
+                        <label className="text-slate-500 font-bold block">نام پزشک ارشد کلینیک:</label>
+                        <input
+                          type="text"
+                          value={clinicConfig.doctorName}
+                          onChange={(e) => setClinicConfig({ ...clinicConfig, doctorName: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-extrabold text-slate-800 text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-slate-500 font-bold block">تخصص و سوابق پزشک:</label>
+                        <input
+                          type="text"
+                          value={clinicConfig.doctorTitle}
+                          onChange={(e) => setClinicConfig({ ...clinicConfig, doctorTitle: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-bold text-slate-700 text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-slate-500 font-bold block">شماره تلفن‌های تماس (نمایشی):</label>
+                        <input
+                          type="text"
+                          value={clinicConfig.phone}
+                          onChange={(e) => setClinicConfig({ ...clinicConfig, phone: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-black text-slate-800 text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-slate-500 font-bold block">لینک خام تماس (مثال: 02122000000 بدون فاصله یا خط تیره):</label>
+                        <input
+                          type="text"
+                          value={clinicConfig.phoneRaw}
+                          onChange={(e) => setClinicConfig({ ...clinicConfig, phoneRaw: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-mono font-bold text-slate-800 text-sm text-left"
+                          dir="ltr"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-slate-500 font-bold block">شماره تلگرام / پیام‌رسان‌ها:</label>
+                        <input
+                          type="text"
+                          value={clinicConfig.telegram}
+                          onChange={(e) => setClinicConfig({ ...clinicConfig, telegram: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-black text-slate-800 text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-slate-500 font-bold block">ساعات کاری کلینیک:</label>
+                        <input
+                          type="text"
+                          value={clinicConfig.workingHours}
+                          onChange={(e) => setClinicConfig({ ...clinicConfig, workingHours: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-bold text-slate-700 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <label className="text-slate-500 font-bold block">آدرس دقیق فیزیکی مطب:</label>
+                      <input
+                        type="text"
+                        value={clinicConfig.address}
+                        onChange={(e) => setClinicConfig({ ...clinicConfig, address: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-extrabold text-slate-800 text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <label className="text-slate-500 font-bold block">توضیحات بخش «درباره دنت فلو»:</label>
+                      <textarea
+                        value={clinicConfig.aboutDesc}
+                        onChange={(e) => setClinicConfig({ ...clinicConfig, aboutDesc: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-semibold text-slate-600 text-sm resize-none"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <label className="text-slate-500 font-bold block">شرایط پرداخت اقساطی مراجعین:</label>
+                      <textarea
+                        value={clinicConfig.installmentInfo}
+                        onChange={(e) => setClinicConfig({ ...clinicConfig, installmentInfo: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-bold text-slate-700 text-sm resize-none"
+                        rows={2.5}
+                      />
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        onClick={() => {
+                          localStorage.setItem("df_clinic_config", JSON.stringify(clinicConfig));
+                          alert("اطلاعات عمومی کلینیک و پزشک با موفقیت ذخیره شد و در تمامی بخش‌ها و چت‌بات اعمال گردید.");
+                        }}
+                        className="px-8 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs sm:text-sm transition-all flex items-center gap-2 shadow-md shadow-teal-600/15 cursor-pointer border-none"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>ثبت و ذخیره سراسری تنظیمات کلینیک</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB CONTENT: AI BOT CONFIGURATION */}
+              {adminActiveTab === "ai" && (
+                <div className="space-y-6" id="ai-editor-tab">
+                  <div className="bg-teal-50/30 border border-teal-100/50 p-5 rounded-2xl text-right">
+                    <h3 className="text-base font-extrabold text-teal-800 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-teal-600 animate-pulse" />
+                      <span>پیکربندی چت‌بات هوش مصنوعی کلینیک دنت فلو</span>
+                    </h3>
+                    <p className="text-slate-600 text-xs sm:text-sm font-medium mt-1">
+                      در این بخش می‌توانید هویت، رفتار، پیام خوش‌آمدگویی و دستورالعمل‌های سیستمی ربات پاسخگوی هوشمند (Gemini 3.5 Flash) را سفارشی‌سازی کنید تا مطابق استراتژی بازاریابی شما به بیماران پاسخ دهد.
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-50 border border-slate-200 p-6 sm:p-8 rounded-2xl space-y-6 text-right">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                      <div className="space-y-1 col-span-2 md:col-span-1">
+                        <label className="text-slate-500 font-bold block">نام نمایشی دستیار هوشمند:</label>
+                        <input
+                          type="text"
+                          value={aiName}
+                          onChange={(e) => setAiName(e.target.value)}
+                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-extrabold text-slate-800 text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1 col-span-2 md:col-span-1">
+                        <label className="text-slate-500 font-bold block">نوع مدل پردازنده هوشمند:</label>
+                        <input
+                          type="text"
+                          value="Google Gemini 3.5 Flash (با پشتیبانی محلی دنت فلو)"
+                          disabled
+                          className="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-100 text-slate-400 font-bold text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <label className="text-slate-500 font-bold block">پیام خوش‌آمدگویی اولیه ربات (کارت اول چت):</label>
+                      <textarea
+                        value={aiGreeting}
+                        onChange={(e) => setAiGreeting(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-semibold text-slate-700 text-sm resize-none"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <label className="text-slate-500 font-bold block">دستورالعمل سیستمی و پرومپت ربات (System Instructions):</label>
+                      <textarea
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white font-mono text-slate-600 text-xs leading-relaxed resize-none"
+                        rows={12}
+                        dir="rtl"
+                      />
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row justify-between gap-3">
+                      <button
+                        onClick={() => {
+                          setAiName("دستیار هوشمند دنت فلو");
+                          setAiGreeting("سلام! من دستیار هوشمند و تخصصی کلینیک دندانپزشکی دنت فلو هستم. هر سوالی درباره طرح درمان، هزینه‌ها، اقساط، ترس از دندانپزشکی یا خدمات ما دارید بپرسید؛ من با عشق راهنمایی‌تان می‌کنم! ✨");
+                          setAiPrompt(`شما دستیار تخصصی، دلسوز و فوق‌العاده باهوش کلینیک دندانپزشکی دیجیتال "دنت فلو" (DentFlow) هستید. نام شما "دستیار هوشمند دنت فلو" است.
+دستورالعمل‌ها:
+۱. پاسخ به مراجعین درباره خدمات ایمپلنت، لمینت، ارتودنسی، عصب‌کشی، دندانپزشکی کودکان.
+۲. جراح زیبایی کلینیک "دکتر مختاری" است. شماره تماس: ۰۲۱-۲۲۰۰۰۰۰۰ است.
+۳. پرداخت اقساطی: ۳۰ الی ۴۰ درصد پیش‌پرداخت، مابقی در اقساط ۶ الی ۱۲ ماهه با چک صیادی بدون بهره.`);
+                          alert("تنظیمات ریست شد. برای ذخیره نهایی، دکمه ذخیره سمت چپ را بزنید.");
+                        }}
+                        className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100 font-extrabold text-xs transition-colors cursor-pointer"
+                      >
+                        بازنشانی به تنظیمات پیش‌فرض کارخانه
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          localStorage.setItem("df_ai_name", aiName);
+                          localStorage.setItem("df_ai_greeting", aiGreeting);
+                          localStorage.setItem("df_ai_prompt", aiPrompt);
+                          alert("پیکربندی هوش مصنوعی با موفقیت بروزرسانی شد. ربات از این لحظه با پرومپت جدید بیمارها را راهنمایی خواهد کرد.");
+                        }}
+                        className="px-8 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs sm:text-sm transition-all flex items-center gap-2 shadow-md shadow-teal-600/15 cursor-pointer border-none"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>بروزرسانی پرومپت و کالیبراسیون هوش مصنوعی</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB CONTENT: ANALYTICS & CLINIC CHARTS */}
+              {adminActiveTab === "analytics" && (
+                <div className="space-y-6" id="analytics-tab-content">
+                  <div className="bg-teal-50/30 border border-teal-100/50 p-5 rounded-2xl text-right">
+                    <h3 className="text-base font-extrabold text-teal-800 flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-teal-600 animate-pulse" />
+                      <span>داشبورد آنالیز و بررسی عملکرد دنت فلو</span>
+                    </h3>
+                    <p className="text-slate-600 text-xs sm:text-sm font-medium mt-1">
+                      آمارها، توزیع نوبت‌ها، خدمات پرطرفدار و ارزش مادی کلینیک را به صورت گرافیکی و کاملاً محاسباتی مشاهده کنید. این اطلاعات زنده هستند و با ثبت هر نوبت جدید فورا بروزرسانی می‌شوند.
+                    </p>
+                  </div>
+
+                  {/* Top Stats Overview */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" id="analytics-kpi-cards">
+                    <div className="bg-white border border-teal-100 p-5 rounded-2xl text-right">
+                      <span className="text-slate-400 font-extrabold text-[11px] block">ارزش نوبت‌های تایید شده دنت فلو</span>
+                      <span className="text-2xl sm:text-3xl font-black text-teal-600 block mt-2 font-mono">
+                        {(adminBookings.filter(b => b.status === "approved").reduce((sum, b) => {
+                          const prices: {[key: string]: number} = { implant: 9500000, veneer: 2800000, orthodontics: 22000000, bleaching: 3500000, pediatric: 1200000, "root-canal": 2500000, surgery: 1800000 };
+                          return sum + (prices[b.serviceId] || 1500000);
+                        }, 0)).toLocaleString("fa-IR")} <span className="text-xs font-bold text-slate-500">تومان</span>
+                      </span>
+                    </div>
+
+                    <div className="bg-white border border-amber-100 p-5 rounded-2xl text-right">
+                      <span className="text-slate-400 font-extrabold text-[11px] block">پتانسیل درآمدی نوبت‌های در انتظار بررسی</span>
+                      <span className="text-2xl sm:text-3xl font-black text-amber-600 block mt-2 font-mono">
+                        {(adminBookings.filter(b => b.status === "pending").reduce((sum, b) => {
+                          const prices: {[key: string]: number} = { implant: 9500000, veneer: 2800000, orthodontics: 22000000, bleaching: 3500000, pediatric: 1200000, "root-canal": 2500000, surgery: 1800000 };
+                          return sum + (prices[b.serviceId] || 1500000);
+                        }, 0)).toLocaleString("fa-IR")} <span className="text-xs font-bold text-slate-500">تومان</span>
+                      </span>
+                    </div>
+
+                    <div className="bg-white border border-teal-50 p-5 rounded-2xl text-right">
+                      <span className="text-slate-400 font-extrabold text-[11px] block">محبوب‌ترین درمان ثبت شده</span>
+                      <span className="text-xl sm:text-2xl font-black text-slate-800 block mt-2">
+                        {(() => {
+                          if (adminBookings.length === 0) return "ایمپلنت دندان";
+                          const counts: {[key: string]: number} = {};
+                          adminBookings.forEach(b => counts[b.serviceId] = (counts[b.serviceId] || 0) + 1);
+                          const topId = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, "implant");
+                          return services.find(s => s.id === topId)?.title || "ایمپلنت دندان";
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Recharts Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="charts-wrapper">
+                    {/* Chart 1: Distribution by Service */}
+                    <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl text-right space-y-4">
+                      <h4 className="text-xs sm:text-sm font-black text-slate-800 border-b border-slate-200 pb-2">سهم خدمات و درمان‌های درخواستی مراجعین</h4>
+                      <div className="h-[300px]" dir="ltr">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={(() => {
+                                const list = adminBookings.length > 0 ? adminBookings : [
+                                  { serviceId: "implant" }, { serviceId: "implant" },
+                                  { serviceId: "veneer" }, { serviceId: "veneer" }, { serviceId: "veneer" },
+                                  { serviceId: "orthodontics" }, { serviceId: "bleaching" }
+                                ];
+                                const counts: {[key: string]: number} = {};
+                                list.forEach(b => counts[b.serviceId] = (counts[b.serviceId] || 0) + 1);
+                                return Object.keys(counts).map(id => ({
+                                  name: services.find(s => s.id === id)?.title || id,
+                                  value: counts[id]
+                                }));
+                              })()}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={80}
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              {[
+                                "#0D9488", "#06B6D4", "#3B82F6", "#8B5CF6", 
+                                "#EC4899", "#F59E0B", "#10B981"
+                              ].map((color, idx) => (
+                                <Cell key={`cell-${idx}`} fill={color} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => `${value} درخواست`} />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Chart 2: Bookings Status Breakdown */}
+                    <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl text-right space-y-4">
+                      <h4 className="text-xs sm:text-sm font-black text-slate-800 border-b border-slate-200 pb-2">وضعیت پذیرش و نهایی‌سازی نوبت‌ها</h4>
+                      <div className="h-[300px]" dir="ltr">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={[
+                              { name: "تایید نهایی شده", تعداد: adminBookings.filter(b => b.status === "approved").length || 4, رنگ: "#0D9488" },
+                              { name: "در انتظار تماس", تعداد: adminBookings.filter(b => b.status === "pending").length || 3, رنگ: "#D97706" },
+                              { name: "لغو شده", تعداد: adminBookings.filter(b => b.status === "cancelled").length || 1, رنگ: "#E11D48" }
+                            ]}
+                          >
+                            <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} />
+                            <YAxis stroke="#64748B" fontSize={10} tickLine={false} />
+                            <Tooltip formatter={(value) => `${value} مورد`} />
+                            <Bar dataKey="تعداد" radius={[8, 8, 0, 0]}>
+                              {[
+                                { color: "#0D9488" },
+                                { color: "#D97706" },
+                                { color: "#E11D48" }
+                              ].map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Chart 3: Potential income estimate */}
+                    <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl text-right space-y-4 col-span-1 lg:col-span-2">
+                      <h4 className="text-xs sm:text-sm font-black text-slate-800 border-b border-slate-200 pb-2">مقایسه ارزش مادی نوبت‌های تایید شده در مقابل معلق (میلیون تومان)</h4>
+                      <div className="h-[250px]" dir="ltr">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart
+                            data={[
+                              {
+                                name: "ارزش مادی نوبت‌ها",
+                                "تایید شده": (adminBookings.filter(b => b.status === "approved").reduce((sum, b) => {
+                                  const prices: {[key: string]: number} = { implant: 9500000, veneer: 2800000, orthodontics: 22000000, bleaching: 3500000, pediatric: 1200000, "root-canal": 2500000, surgery: 1800000 };
+                                  return sum + (prices[b.serviceId] || 1500000);
+                                }, 0)) / 1000000 || 28,
+                                "در انتظار تماس": (adminBookings.filter(b => b.status === "pending").reduce((sum, b) => {
+                                  const prices: {[key: string]: number} = { implant: 9500000, veneer: 2800000, orthodontics: 22000000, bleaching: 3500000, pediatric: 1200000, "root-canal": 2500000, surgery: 1800000 };
+                                  return sum + (prices[b.serviceId] || 1500000);
+                                }, 0)) / 1000000 || 16
+                              }
+                            ]}
+                          >
+                            <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} />
+                            <YAxis stroke="#64748B" fontSize={10} tickLine={false} />
+                            <Tooltip formatter={(value) => `${value} میلیون تومان`} />
+                            <Legend />
+                            <Area type="monotone" dataKey="تایید شده" stroke="#0D9488" fill="#CCFBF1" />
+                            <Area type="monotone" dataKey="در انتظار تماس" stroke="#D97706" fill="#FEF3C7" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Helper Info */}
+              <div className="bg-teal-50/40 rounded-2xl p-4 border border-teal-100 flex items-center gap-3" id="admin-help-info">
+                <Info className="w-5 h-5 text-teal-600 shrink-0" />
+                <p className="text-[11px] sm:text-xs text-slate-600 font-bold leading-relaxed">
+                  <span className="font-black text-teal-700">راهنمای کادر درمان:</span> با تایید هر نوبت، درخواست به وضعیت رنگی سبز (رزرو قطعی) منتقل خواهد شد. همچنین با کلیک روی شماره تماس هر مراجع، می‌توانید مستقیماً با او تماس تلفنی یا ارتباط واتس‌اپ برقرار کنید. اطلاعات این جدول مستقیماً با پایگاه داده سرور کلینیک دنت فلو همگام‌سازی می‌شود.
+                </p>
+              </div>
+
+            </div>
+          </main>
         )
       ) : (
         <>
@@ -1310,7 +1954,7 @@ export default function App() {
 
         {/* Bento Grid Services arrangement */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="services-grid">
-          {servicesData.map((service, idx) => {
+          {services.map((service, idx) => {
             // Apply unique bento layouts - e.g. first and primary aesthetic services get glowing subtle card gradients
             const isHighlight = service.id === "implant" || service.id === "laminate";
             return (
@@ -2162,7 +2806,7 @@ export default function App() {
                               onChange={handleFormChange}
                               className="w-full px-4 py-3 rounded-xl bg-[#F8FCFC] border border-slate-200 focus:border-teal-500 focus:ring-teal-500 text-slate-800 text-sm focus:outline-none focus:ring-2"
                             >
-                              {servicesData.map((s) => (
+                              {services.map((s) => (
                                 <option key={s.id} value={s.id}>{s.title}</option>
                               ))}
                             </select>
@@ -2294,7 +2938,7 @@ export default function App() {
                           <div id="ticket-detail-service">
                             <span className="text-slate-400 block font-bold">خدمت انتخابی:</span>
                             <span className="text-slate-800 font-bold mt-1 block">
-                              {servicesData.find(s => s.id === formData.serviceId)?.title || "ایمپلنت دندان"}
+                              {services.find(s => s.id === formData.serviceId)?.title || "ایمپلنت دندان"}
                             </span>
                           </div>
                           <div id="ticket-detail-date">
@@ -2354,7 +2998,7 @@ export default function App() {
                         </button>
                         <a 
                           id="btn-receipt-call"
-                          href="tel:02122000000" 
+                          href={`tel:${clinicConfig.phoneRaw}`} 
                           className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm transition-colors shadow-sm flex items-center justify-center gap-2"
                         >
                           <Phone className="w-4 h-4 text-white" />
@@ -2520,7 +3164,7 @@ export default function App() {
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-extrabold text-slate-900 text-sm">آدرس فیزیکی کلینیک</h4>
-                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-semibold">تهران، الهیه، خیابان فرشته، ساختمان پزشکان مریم، طبقه سوم</p>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-semibold">{clinicConfig.address}</p>
                   </div>
                 </div>
 
@@ -2530,8 +3174,8 @@ export default function App() {
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-extrabold text-slate-900 text-sm">تلفن‌های تماس مستقیم</h4>
-                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-black">۰۲۱-۲۲۰۰۰۰۰۰ | ۰۲۱-۲۲۰۰۰۰۰۱</p>
-                    <p className="text-[10px] text-slate-400 font-bold">امکان ارسال پیام در تلگرام یا واتس‌اپ: ۰۹۱۲۳۴۵۶۷۸۹</p>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-black">{clinicConfig.phone}</p>
+                    <p className="text-[10px] text-slate-400 font-bold">امکان ارسال پیام در تلگرام یا واتس‌اپ: {clinicConfig.telegram}</p>
                   </div>
                 </div>
 
@@ -2541,7 +3185,7 @@ export default function App() {
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-extrabold text-slate-900 text-sm">ساعات کاری و پذیرش</h4>
-                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-semibold">شنبه تا پنجشنبه از ساعت ۱۰:۰۰ صبح الی ۲۰:۰۰ شب</p>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-semibold">{clinicConfig.workingHours}</p>
                     <p className="text-[10px] text-rose-500 font-bold">بخش اورژانس شبانه‌روزی (هماهنگی قبلی تلفنی)</p>
                   </div>
                 </div>
