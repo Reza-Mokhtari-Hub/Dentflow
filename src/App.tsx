@@ -45,7 +45,19 @@ import {
   Search,
   Edit3,
   Save,
-  AlertCircle
+  AlertCircle,
+  FolderHeart,
+  DollarSign,
+  Users,
+  CreditCard,
+  Plus,
+  FileText,
+  CheckSquare,
+  TrendingUp,
+  PlusCircle,
+  FolderOpen,
+  Printer,
+  BookOpen
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -71,8 +83,14 @@ import {
   blogPosts, 
   stats,
   Service,
-  SmileCase
+  SmileCase,
+  BlogPost
 } from "./data";
+
+import PatientsTab from "./components/PatientsTab";
+import BillingTab from "./components/BillingTab";
+import SecurityTab from "./components/SecurityTab";
+import ArticlesTab from "./components/ArticlesTab";
 
 export default function App() {
   // Navigation states
@@ -114,10 +132,175 @@ export default function App() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [storedAdminUsername, setStoredAdminUsername] = useState(() => {
+    return localStorage.getItem("df_admin_username") || "admin";
+  });
+  const [storedAdminPassword, setStoredAdminPassword] = useState(() => {
+    return localStorage.getItem("df_admin_password") || "admin";
+  });
   const [loginError, setLoginError] = useState("");
   const [adminBookings, setAdminBookings] = useState<any[]>([]);
   const [adminFilter, setAdminFilter] = useState<string>("all");
-  const [adminActiveTab, setAdminActiveTab] = useState<"bookings" | "services" | "contact" | "ai" | "analytics">("bookings");
+  const [adminActiveTab, setAdminActiveTab] = useState<"bookings" | "services" | "contact" | "ai" | "analytics" | "patients" | "billing" | "security" | "articles">("bookings");
+
+  // -----------------------------------------------------------------
+  // CLINIC PATIENTS DATABASE & DENTAL CHART STATES
+  // -----------------------------------------------------------------
+  const [patients, setPatients] = useState<any[]>(() => {
+    const saved = localStorage.getItem("df_patients");
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: "P-101",
+        fullName: "سارا احمدی",
+        phone: "09123456789",
+        nationalId: "0012345678",
+        age: 28,
+        gender: "female",
+        history: "حساسیت خفیف به پنی‌سیلین - بدون بیماری زمینه‌ای",
+        bloodType: "A+",
+        dentalChart: {
+          1: "healthy", 2: "healthy", 3: "healthy", 4: "filled", 5: "healthy", 6: "healthy", 7: "healthy", 8: "healthy",
+          9: "healthy", 10: "healthy", 11: "healthy", 12: "healthy", 13: "decayed", 14: "healthy", 15: "healthy", 16: "healthy",
+          17: "healthy", 18: "healthy", 19: "missing", 20: "healthy", 21: "healthy", 22: "healthy", 23: "healthy", 24: "healthy",
+          25: "healthy", 26: "healthy", 27: "healthy", 28: "healthy", 29: "healthy", 30: "filled", 31: "healthy", 32: "healthy"
+        },
+        treatmentPlan: [
+          { id: 1, title: "ایمپلنت سوئیسی دندان ۱۹", cost: 9500000, status: "completed" },
+          { id: 2, title: "ترمیم کامپوزیت دندان ۱۳", cost: 1800000, status: "planned" }
+        ],
+        prescriptions: [
+          {
+            id: "RX-4019",
+            date: "1405/04/10",
+            drugs: [
+              { name: "قرص آموکسی‌سیلین ۵۰۰ میلی‌گرم", dose: "هر ۸ ساعت یک عدد", duration: "۵ روز" },
+              { name: "کپسول ژلوفن ۴۰۰ میلی‌گرم", dose: "هر ۶ ساعت در صورت درد شدید", duration: "۳ روز" }
+            ],
+            diagnosis: "عفونت لثه اطراف دندان ۱۳"
+          }
+        ]
+      },
+      {
+        id: "P-102",
+        fullName: "محمد قاسمی",
+        phone: "09198765432",
+        nationalId: "0451234567",
+        age: 45,
+        gender: "male",
+        history: "فشار خون کنترل‌شده با دارو - مصرف آسپرین با هماهنگی",
+        bloodType: "O+",
+        dentalChart: {
+          1: "healthy", 2: "healthy", 3: "missing", 4: "missing", 5: "healthy", 6: "healthy", 7: "healthy", 8: "healthy",
+          9: "healthy", 10: "healthy", 11: "healthy", 12: "healthy", 13: "healthy", 14: "healthy", 15: "healthy", 16: "healthy",
+          17: "healthy", 18: "healthy", 19: "healthy", 20: "healthy", 21: "healthy", 22: "healthy", 23: "healthy", 24: "healthy",
+          25: "healthy", 26: "healthy", 27: "healthy", 28: "healthy", 29: "healthy", 30: "decayed", 31: "decayed", 32: "healthy"
+        },
+        treatmentPlan: [
+          { id: 1, title: "۲ واحد ایمپلنت دیجیتال سوئیسی دندان ۳ و ۴", cost: 19000000, status: "in_progress" },
+          { id: 2, title: "عصب‌کشی و روکش دندان ۳۰ و ۳۱", cost: 8600000, status: "planned" }
+        ],
+        prescriptions: []
+      },
+      {
+        id: "P-103",
+        fullName: "نیلوفر راد",
+        phone: "09355556677",
+        nationalId: "0076543210",
+        age: 34,
+        gender: "female",
+        history: "سالم - بدون حساسیت دارویی",
+        bloodType: "B+",
+        dentalChart: {
+          1: "healthy", 2: "healthy", 3: "healthy", 4: "healthy", 5: "healthy", 6: "healthy", 7: "healthy", 8: "healthy",
+          9: "healthy", 10: "healthy", 11: "healthy", 12: "healthy", 13: "healthy", 14: "healthy", 15: "healthy", 16: "healthy",
+          17: "healthy", 18: "healthy", 19: "healthy", 20: "healthy", 21: "healthy", 22: "healthy", 23: "healthy", 24: "healthy",
+          25: "healthy", 26: "healthy", 27: "healthy", 28: "healthy", 29: "healthy", 30: "healthy", 31: "healthy", 32: "healthy"
+        },
+        treatmentPlan: [
+          { id: 1, title: "۱۰ واحد کامپوزیت زیبایی IPS فک بالا", cost: 28000000, status: "completed" }
+        ],
+        prescriptions: []
+      }
+    ];
+  });
+
+  const [selectedPatientId, setSelectedPatientId] = useState<string>("P-101");
+  const [isAddingPatient, setIsAddingPatient] = useState(false);
+  const [newPatientForm, setNewPatientForm] = useState({
+    fullName: "",
+    phone: "",
+    nationalId: "",
+    age: "",
+    gender: "female",
+    history: "بدون بیماری زمینه ای",
+    bloodType: "O+"
+  });
+
+  // Dental Tooth Selection & Edit States
+  const [activeToothNum, setActiveToothNum] = useState<number | null>(null);
+
+  // New Prescription Form State
+  const [isAddingPrescription, setIsAddingPrescription] = useState(false);
+  const [rxDiagnosis, setRxDiagnosis] = useState("");
+  const [rxDrugs, setRxDrugs] = useState<any[]>([]);
+  const [newDrug, setNewDrug] = useState({
+    name: "",
+    dose: "هر ۸ ساعت یک عدد",
+    duration: "۵ روز"
+  });
+
+  // New Treatment Plan state
+  const [newPlanTitle, setNewPlanTitle] = useState("");
+  const [newPlanCost, setNewPlanCost] = useState("");
+
+  // -----------------------------------------------------------------
+  // CLINIC FINANCIALS & BOOKKEEPING LEDGER STATES
+  // -----------------------------------------------------------------
+  const [transactions, setTransactions] = useState<any[]>(() => {
+    const saved = localStorage.getItem("df_transactions");
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: "T-1001", type: "income", amount: 9500000, category: "treatment", date: "1405/04/12", description: "پیش‌پرداخت ایمپلنت خانم سارا احمدی", patientId: "P-101" },
+      { id: "T-1002", type: "income", amount: 28000000, category: "treatment", date: "1405/04/10", description: "تسویه حساب کامپوزیت خانم نیلوفر راد", patientId: "P-103" },
+      { id: "T-1003", type: "expense", amount: 12500000, category: "materials", date: "1405/04/08", description: "خرید مواد مصرفی کامپوزیت IPS و گوتاپرکا از شرکت آذرطب" },
+      { id: "T-1004", type: "expense", amount: 4800000, category: "other", date: "1405/04/05", description: "هزینه سرویس و استریل اتوکلاو بخش جراحی" },
+      { id: "T-1005", type: "income", amount: 5000000, category: "treatment", date: "1405/04/04", description: "قسط دوم ایمپلنت آقای محمد قاسمی", patientId: "P-102" }
+    ];
+  });
+
+  const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+  const [newTxForm, setNewTxForm] = useState({
+    type: "income",
+    amount: "",
+    category: "treatment",
+    date: "1405/04/05",
+    description: "",
+    patientId: ""
+  });
+
+  // Official Invoice Generator Form States
+  const [invoicePatientId, setInvoicePatientId] = useState("P-101");
+  const [invoiceItems, setInvoiceItems] = useState<any[]>([
+    { title: "ایمپلنت دیجیتال (فیکسچر سوئیسی)", qty: 1, unitPrice: 9500000 }
+  ]);
+  const [invoiceDiscount, setInvoiceDiscount] = useState<number>(10); // 10% discount default
+  const [invoiceCreated, setInvoiceCreated] = useState<any | null>(null);
+  const [isViewingInvoicePreview, setIsViewingInvoicePreview] = useState(false);
+
+  // Search and Filter states
+  const [patientsSearch, setPatientsSearch] = useState("");
+  const [billingCategoryFilter, setBillingCategoryFilter] = useState("all");
+  const [billingTypeFilter, setBillingTypeFilter] = useState("all");
+
+  // Auto save patients and transactions to localStorage on change
+  useEffect(() => {
+    localStorage.setItem("df_patients", JSON.stringify(patients));
+  }, [patients]);
+
+  useEffect(() => {
+    localStorage.setItem("df_transactions", JSON.stringify(transactions));
+  }, [transactions]);
 
   // Determine if we should use local storage fallback (for Netlify / static hosts / server-less environments)
   const [useLocalDb, setUseLocalDb] = useState<boolean>(() => {
@@ -131,6 +314,53 @@ export default function App() {
       window.location.hostname.includes("render");
     return isStaticHost;
   });
+
+  // CLINIC ARTICLES DATABASE STATE & EFFECT
+  const [articles, setArticles] = useState<BlogPost[]>([]);
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      if (useLocalDb) {
+        const saved = localStorage.getItem("df_local_articles");
+        if (saved) {
+          setArticles(JSON.parse(saved));
+        } else {
+          setArticles(blogPosts);
+          localStorage.setItem("df_local_articles", JSON.stringify(blogPosts));
+        }
+        return;
+      }
+      try {
+        const res = await fetch("/api/articles");
+        if (res.ok) {
+          const data = await res.json();
+          setArticles(data);
+        } else {
+          const saved = localStorage.getItem("df_local_articles");
+          if (saved) {
+            setArticles(JSON.parse(saved));
+          } else {
+            setArticles(blogPosts);
+          }
+        }
+      } catch (err) {
+        console.warn("API returned error, switching to local articles DB.", err);
+        const saved = localStorage.getItem("df_local_articles");
+        if (saved) {
+          setArticles(JSON.parse(saved));
+        } else {
+          setArticles(blogPosts);
+        }
+      }
+    };
+    fetchArticles();
+  }, [useLocalDb]);
+
+  useEffect(() => {
+    if (useLocalDb && articles.length > 0) {
+      localStorage.setItem("df_local_articles", JSON.stringify(articles));
+    }
+  }, [articles, useLocalDb]);
 
   // Client-side local DB initial data (mirrors original server sample records)
   const getLocalBookings = () => {
@@ -496,7 +726,7 @@ export default function App() {
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminUsername.trim().toLowerCase() === "admin" && adminPassword === "admin") {
+    if (adminUsername.trim().toLowerCase() === storedAdminUsername.trim().toLowerCase() && adminPassword === storedAdminPassword) {
       setIsAdminAuthenticated(true);
       setLoginError("");
     } else {
@@ -1128,30 +1358,6 @@ ${clinicConfig.phone}
                 </button>
               </form>
 
-              {/* Netlify Auto-Installer Alert & Button */}
-              <div className="bg-teal-50/50 border border-teal-100 rounded-2xl p-4 space-y-3 text-right" id="netlify-login-installer">
-                <div className="flex items-center gap-2 text-teal-800 text-xs font-bold">
-                  <Settings className="w-4 h-4 text-teal-600 animate-spin-slow" />
-                  <span>دستیار دیتابیس و نصب خودکار دنت فلو</span>
-                </div>
-                <p className="text-[10px] sm:text-xs text-teal-700 font-semibold leading-relaxed">
-                  این اپلیکیشن کاملاً مستقل بوده و بدون نیاز به وب‌سرور روی هاست‌های ایستایی چون <span className="font-bold text-teal-900">Netlify</span> اجرا می‌شود. اطلاعات ورود پنل: نام کاربری <span className="font-bold text-teal-900">admin</span> و کلمه عبور <span className="font-bold text-teal-900">admin</span> است.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    localStorage.removeItem("df_bookings");
-                    localStorage.setItem("df_use_local_db", "true");
-                    setUseLocalDb(true);
-                    setAdminBookings(getLocalBookings());
-                    alert("🎉 پایگاه داده کلاینت‌ساید با موفقیت نصب و فعال شد! دکمه ورود را بزنید تا کل کنترل‌سنتر را بررسی کنید.");
-                  }}
-                  className="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-[11px] rounded-xl transition-all cursor-pointer text-center block border-none shadow-sm shadow-teal-600/10"
-                >
-                  🚀 نصب خودکار اطلاعات نمونه (ویژه نتفیلای)
-                </button>
-              </div>
-
               <button
                 type="button"
                 onClick={() => {
@@ -1213,10 +1419,14 @@ ${clinicConfig.phone}
               <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-4" id="admin-tabs-nav">
                 {[
                   { id: "bookings", label: "نوبت‌های دریافتی", icon: Calendar },
+                  { id: "patients", label: "پرونده الکترونیک و چارت دندان", icon: FolderHeart },
+                  { id: "articles", label: "مدیریت مقالات علمی", icon: BookOpen },
+                  { id: "billing", label: "مدیریت مالی و صدور فاکتور", icon: DollarSign },
                   { id: "services", label: "ویرایش خدمات و تعرفه‌ها", icon: Sliders },
                   { id: "contact", label: "اطلاعات تماس و کلینیک", icon: MapPin },
                   { id: "ai", label: "پیکربندی هوش مصنوعی", icon: Sparkles },
-                  { id: "analytics", label: "آمار و آنالیز کلینیک", icon: Activity }
+                  { id: "analytics", label: "آمار و آنالیز کلینیک", icon: Activity },
+                  { id: "security", label: "تغییر رمز عبور", icon: Lock }
                 ].map((tab) => {
                   const Icon = tab.icon;
                   const isActive = adminActiveTab === tab.id;
@@ -1563,6 +1773,78 @@ ${clinicConfig.phone}
                     )}
                   </div>
                 </div>
+              )}
+
+              {adminActiveTab === "patients" && (
+                <PatientsTab
+                  patients={patients}
+                  setPatients={setPatients}
+                  selectedPatientId={selectedPatientId}
+                  setSelectedPatientId={setSelectedPatientId}
+                  isAddingPatient={isAddingPatient}
+                  setIsAddingPatient={setIsAddingPatient}
+                  newPatientForm={newPatientForm}
+                  setNewPatientForm={setNewPatientForm}
+                  activeToothNum={activeToothNum}
+                  setActiveToothNum={setActiveToothNum}
+                  isAddingPrescription={isAddingPrescription}
+                  setIsAddingPrescription={setIsAddingPrescription}
+                  rxDiagnosis={rxDiagnosis}
+                  setRxDiagnosis={setRxDiagnosis}
+                  rxDrugs={rxDrugs}
+                  setRxDrugs={setRxDrugs}
+                  newDrug={newDrug}
+                  setNewDrug={setNewDrug}
+                  newPlanTitle={newPlanTitle}
+                  setNewPlanTitle={setNewPlanTitle}
+                  newPlanCost={newPlanCost}
+                  setNewPlanCost={setNewPlanCost}
+                  patientsSearch={patientsSearch}
+                  setPatientsSearch={setPatientsSearch}
+                  clinicConfig={clinicConfig}
+                />
+              )}
+
+              {adminActiveTab === "billing" && (
+                <BillingTab
+                  transactions={transactions}
+                  setTransactions={setTransactions}
+                  isAddingTransaction={isAddingTransaction}
+                  setIsAddingTransaction={setIsAddingTransaction}
+                  newTxForm={newTxForm}
+                  setNewTxForm={setNewTxForm}
+                  patients={patients}
+                  invoicePatientId={invoicePatientId}
+                  setInvoicePatientId={setInvoicePatientId}
+                  invoiceItems={invoiceItems}
+                  setInvoiceItems={setInvoiceItems}
+                  invoiceDiscount={invoiceDiscount}
+                  setInvoiceDiscount={setInvoiceDiscount}
+                  invoiceCreated={invoiceCreated}
+                  setInvoiceCreated={setInvoiceCreated}
+                  isViewingInvoicePreview={isViewingInvoicePreview}
+                  setIsViewingInvoicePreview={setIsViewingInvoicePreview}
+                  billingTypeFilter={billingTypeFilter}
+                  setBillingTypeFilter={setBillingTypeFilter}
+                  clinicConfig={clinicConfig}
+                />
+              )}
+
+              {adminActiveTab === "security" && (
+                <SecurityTab
+                  storedAdminUsername={storedAdminUsername}
+                  setStoredAdminUsername={setStoredAdminUsername}
+                  storedAdminPassword={storedAdminPassword}
+                  setStoredAdminPassword={setStoredAdminPassword}
+                />
+              )}
+
+              {adminActiveTab === "articles" && (
+                <ArticlesTab
+                  articles={articles}
+                  setArticles={setArticles}
+                  useLocalDb={useLocalDb}
+                />
               )}
 
               {/* TAB CONTENT: SERVICES & PRICING */}
@@ -2912,7 +3194,7 @@ ${clinicConfig.phone}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="articles-grid">
-          {blogPosts.map((post) => (
+          {(articles.length > 0 ? articles : blogPosts).map((post) => (
             <article 
               key={post.id}
               id={`article-card-${post.id}`}

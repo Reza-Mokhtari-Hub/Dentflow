@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -235,6 +235,171 @@ async function startServer() {
     }
 
     res.json({ success: true, message: "نوبت با موفقیت حذف شد." });
+  });
+
+  // In-memory persistent Blog Posts Database
+  interface BlogPost {
+    id: number;
+    title: string;
+    excerpt: string;
+    category: string;
+    date: string;
+    readTime: string;
+    imageUrl: string;
+  }
+
+  let blogPosts: BlogPost[] = [
+    {
+      id: 1,
+      title: "مراقبت‌های حیاتی پس از کاشت ایمپلنت دندان که باید بدانید",
+      excerpt: "کاشت ایمپلنت یک جراحی ظریف است. رعایت این ۵ نکته طلایی در هفته اول می‌تواند شانس موفقیت جوش خوردن پایه را تا ۹۹٪ تضمین کند.",
+      category: "ایمپلنت",
+      date: "۱۴ تیر ۱۴۰۵",
+      readTime: "مطالعه ۵ دقیقه",
+      imageUrl: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=600&auto=format&fit=crop"
+    },
+    {
+      id: 2,
+      title: "تفاوت لمینت سرامیکی و کامپوزیت ونیر چیست؟ کدام مناسب شماست؟",
+      excerpt: "بررسی کامل مقایسه قیمت، میزان تراش دندان، ثبات رنگ، طول عمر و تفاوت زیبایی لمینت‌های شیشه‌ای و کامپوزیت‌های سوئیسی.",
+      category: "زیبایی",
+      date: "۱۰ تیر ۱۴۰۵",
+      readTime: "مطالعه ۷ دقیقه",
+      imageUrl: "https://images.unsplash.com/photo-1512223792601-592a9809eed4?q=80&w=600&auto=format&fit=crop"
+    },
+    {
+      id: 3,
+      title: "چگونه بوی بد دهان را یکبار برای همیشه درمان کنیم؟",
+      excerpt: "بوی بد دهان همیشه به خاطر مسواک نزدن نیست! علل پنهان مانند بیماری‌های لثه، سنگ لوزه‌ها و مشکلات گوارشی را بشناسید و درمان کنید.",
+      category: "سلامت دهان",
+      date: "۰۵ تیر ۱۴۰۵",
+      readTime: "مطالعه ۴ دقیقه",
+      imageUrl: "https://images.unsplash.com/photo-1579684389782-64d84b5e905d?q=80&w=600&auto=format&fit=crop"
+    }
+  ];
+
+  // API Route: Get all articles
+  app.get("/api/articles", (req, res) => {
+    res.json(blogPosts);
+  });
+
+  // API Route: Create new article
+  app.post("/api/articles", (req, res) => {
+    const { title, excerpt, category, date, readTime, imageUrl } = req.body;
+
+    if (!title || !excerpt || !category) {
+      return res.status(400).json({ error: "عنوان، خلاصه و دسته‌بندی مقاله الزامی هستند." });
+    }
+
+    const newId = blogPosts.length > 0 ? Math.max(...blogPosts.map(p => p.id)) + 1 : 1;
+    const newArticle: BlogPost = {
+      id: newId,
+      title,
+      excerpt,
+      category,
+      date: date || new Date().toLocaleDateString("fa-IR"),
+      readTime: readTime || "مطالعه ۵ دقیقه",
+      imageUrl: imageUrl || "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=600&auto=format&fit=crop"
+    };
+
+    blogPosts.unshift(newArticle);
+    res.status(201).json(newArticle);
+  });
+
+  // API Route: Update article
+  app.put("/api/articles/:id", (req, res) => {
+    const id = parseInt(req.params.id);
+    const { title, excerpt, category, date, readTime, imageUrl } = req.body;
+
+    const index = blogPosts.findIndex(p => p.id === id);
+    if (index === -1) {
+      return res.status(404).json({ error: "مقاله یافت نشد." });
+    }
+
+    blogPosts[index] = {
+      ...blogPosts[index],
+      title: title || blogPosts[index].title,
+      excerpt: excerpt || blogPosts[index].excerpt,
+      category: category || blogPosts[index].category,
+      date: date || blogPosts[index].date,
+      readTime: readTime || blogPosts[index].readTime,
+      imageUrl: imageUrl || blogPosts[index].imageUrl,
+    };
+
+    res.json(blogPosts[index]);
+  });
+
+  // API Route: Delete article
+  app.delete("/api/articles/:id", (req, res) => {
+    const id = parseInt(req.params.id);
+    const initialLength = blogPosts.length;
+    blogPosts = blogPosts.filter(p => p.id !== id);
+
+    if (blogPosts.length === initialLength) {
+      return res.status(404).json({ error: "مقاله یافت نشد." });
+    }
+
+    res.json({ success: true, message: "مقاله با موفقیت حذف شد." });
+  });
+
+  // API Route: Generate article with Gemini
+  app.post("/api/articles/generate", async (req, res) => {
+    try {
+      const { topic, category } = req.body;
+
+      if (!topic || !category) {
+        return res.status(400).json({ error: "موضوع و دسته‌بندی مقاله الزامی هستند." });
+      }
+
+      if (!process.env.GEMINI_API_KEY) {
+        // Return a mock generated article if API key is missing
+        return res.json({
+          title: `راهنمای جامع ${topic} در دندانپزشکی مدرن`,
+          excerpt: `در این مقاله تخصصی به بررسی علمی و همه‌جانبه موضوع ${topic} پرداخته و بهترین روش‌ها و تکنیک‌های روز دنیا برای دسته‌بندی ${category} را با هم مرور می‌کنیم.`,
+          category: category,
+          readTime: "مطالعه ۵ دقیقه",
+          imageUrl: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=600&auto=format&fit=crop"
+        });
+      }
+
+      const prompt = `یک مقاله علمی، کاملاً تخصصی، بسیار جذاب و مفید برای وبلاگ یک کلینیک دندانپزشکی پیشرفته با موضوع "${topic}" بنویس.
+این مقاله متعلق به دسته‌بندی "${category}" است.
+خروجی باید حتماً به صورت یک شیء JSON با ساختار زیر باشد و هیچ متنی به جز JSON در خروجی نباشد:
+{
+  "title": "یک عنوان جذاب، علمی و بسیار باکلاس به زبان فارسی",
+  "excerpt": "یک خلاصه ترغیب‌کننده و جامع از مقاله شامل حداقل ۳ جمله کامل به زبان فارسی که کاربر را به خواندن کل مطلب تشویق کند",
+  "category": "${category}",
+  "readTime": "مدت زمان تقریبی مطالعه بر حسب دقیقه به فارسی، برای مثال: مطالعه ۶ دقیقه",
+  "imageUrl": "یک آدرس تصویر بسیار باکیفیت و جذاب مرتبط با دندانپزشکی یا موضوع مقاله از Unsplash (مانند عکس‌های تجهیزات دندانپزشکی، لبخند، پزشک و غیره)"
+}`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              excerpt: { type: Type.STRING },
+              category: { type: Type.STRING },
+              readTime: { type: Type.STRING },
+              imageUrl: { type: Type.STRING }
+            },
+            required: ["title", "excerpt", "category", "readTime", "imageUrl"]
+          },
+          temperature: 0.8
+        }
+      });
+
+      const responseText = response.text || "";
+      const generated = JSON.parse(responseText.trim());
+      return res.json(generated);
+    } catch (error: any) {
+      console.error("Gemini Generate Article Error:", error);
+      return res.status(500).json({ error: error.message || "خطا در تولید محتوای مقاله با هوش مصنوعی." });
+    }
   });
 
   // API Route: Health Check
