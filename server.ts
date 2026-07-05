@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import { mkdir, readFile, writeFile } from "fs/promises";
+import { createHash, randomUUID } from "crypto";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
@@ -30,18 +31,48 @@ interface BlogPost {
   imageUrl: string;
 }
 
+interface AdminCredentials {
+  username: string;
+  passwordHash: string;
+}
+
 interface ClinicDataState {
   bookings: Booking[];
   blogPosts: BlogPost[];
   patients: any[];
   transactions: any[];
-  adminCredentials: { username: string; password: string };
+  adminCredentials: AdminCredentials;
   clinicConfig: any;
   services: any[];
   aiConfig: { name: string; greeting: string; prompt: string };
 }
 
 const stateFilePath = path.join(process.cwd(), "data", "clinic-data.json");
+
+function hashPassword(password: string) {
+  return createHash("sha256").update(password).digest("hex");
+}
+
+function normalizeAdminCredentials(raw: any): AdminCredentials {
+  if (raw?.passwordHash) {
+    return {
+      username: raw.username || "admin",
+      passwordHash: raw.passwordHash,
+    };
+  }
+
+  if (raw?.password) {
+    return {
+      username: raw.username || "admin",
+      passwordHash: hashPassword(raw.password),
+    };
+  }
+
+  return {
+    username: "admin",
+    passwordHash: hashPassword("admin"),
+  };
+}
 
 const defaultClinicState: ClinicDataState = {
   bookings: [
@@ -113,7 +144,10 @@ const defaultClinicState: ClinicDataState = {
   ],
   patients: [],
   transactions: [],
-  adminCredentials: { username: "admin", password: "admin" },
+  adminCredentials: {
+    username: "admin",
+    passwordHash: hashPassword("admin"),
+  },
   clinicConfig: {
     phone: "۰۲۱-۲۲۰۰۰۰۰۰ | ۰۲۱-۲۲۰۰۰۰۰۱",
     phoneRaw: "02122000000",
@@ -153,7 +187,7 @@ async function loadPersistedState(): Promise<ClinicDataState> {
       blogPosts: Array.isArray(parsed.blogPosts) ? parsed.blogPosts : defaultClinicState.blogPosts,
       patients: Array.isArray(parsed.patients) ? parsed.patients : defaultClinicState.patients,
       transactions: Array.isArray(parsed.transactions) ? parsed.transactions : defaultClinicState.transactions,
-      adminCredentials: parsed.adminCredentials || defaultClinicState.adminCredentials,
+      adminCredentials: normalizeAdminCredentials(parsed.adminCredentials),
       clinicConfig: parsed.clinicConfig || defaultClinicState.clinicConfig,
       services: Array.isArray(parsed.services) ? parsed.services : defaultClinicState.services,
       aiConfig: parsed.aiConfig || defaultClinicState.aiConfig,
@@ -196,6 +230,28 @@ async function startServer() {
   let patients = persistedState.patients;
   let transactions = persistedState.transactions;
   let adminCredentials = persistedState.adminCredentials;
+  const adminSessions = new Map<string, { username: string; expiresAt: number }>();
+  const adminSessionTtlMs = 1000 * 60 * 60 * 8;
+
+  const createAdminSession = (username: string) => {
+    const token = randomUUID();
+    adminSessions.set(token, { username, expiresAt: Date.now() + adminSessionTtlMs });
+    return token;
+  };
+
+  const authenticateAdmin = (req: any, res: any, next: any) => {
+    const authorization = req.headers.authorization || "";
+    const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+    const session = adminSessions.get(token);
+
+    if (!session || session.expiresAt < Date.now()) {
+      adminSessions.delete(token);
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    req.adminUsername = session.username;
+    next();
+  };
   let clinicConfig = persistedState.clinicConfig;
   let services = persistedState.services;
   let aiConfig = persistedState.aiConfig;
@@ -214,10 +270,47 @@ async function startServer() {
   };
 
   app.get("/api/clinic-state", async (_req, res) => {
-    res.json({ bookings, blogPosts, patients, transactions, adminCredentials, clinicConfig, services, aiConfig });
+    res.json({ bookings, blogPosts, patients, transactions, adminCredentials: { username: adminCredentials.username }, clinicConfig, services, aiConfig });
   });
 
-  app.post("/api/clinic-state", async (req, res) => {
+  app.post("/api/admin/login", async (req, res) => {
+    const { username, password } = req.body || {};
+
+    if (!username || !password) {
+      return res.status(400).json({ error: "نام کاربری و کلمه عبور ضروری هستند." });
+    }
+
+    const isValid = username.trim().toLowerCase() === adminCredentials.username.trim().toLowerCase() && hashPassword(password) === adminCredentials.passwordHash;
+    if (!isValid) {
+      return res.status(401).json({ error: "نام کاربری یا کلمه عبور نادرست است." });
+    }
+
+    const token = createAdminSession(adminCredentials.username);
+    return res.json({ ok: true, token, username: adminCredentials.username });
+  });
+
+  app.post("/api/admin/update-password", authenticateAdmin, async (req, res) => {
+    const { currentUsername, currentPassword, newUsername, newPassword } = req.body || {};
+
+    if (!currentUsername || !currentPassword || !newUsername || !newPassword) {
+      return res.status(400).json({ error: "اطلاعات وارد شده ناقص است." });
+    }
+
+    const isCurrentValid = currentUsername.trim().toLowerCase() === adminCredentials.username.trim().toLowerCase() && hashPassword(currentPassword) === adminCredentials.passwordHash;
+    if (!isCurrentValid) {
+      return res.status(401).json({ error: "کلمه عبور فعلی نادرست است." });
+    }
+
+    adminCredentials = {
+      username: newUsername.trim(),
+      passwordHash: hashPassword(newPassword),
+    };
+    await persistState();
+
+    return res.json({ ok: true, username: adminCredentials.username });
+  });
+
+  app.post("/api/clinic-state", authenticateAdmin, async (req, res) => {
     const payload = req.body || {};
 
     if (Array.isArray(payload.bookings)) bookings = payload.bookings;

@@ -135,9 +135,7 @@ export default function App() {
   const [storedAdminUsername, setStoredAdminUsername] = useState(() => {
     return localStorage.getItem("df_admin_username") || "admin";
   });
-  const [storedAdminPassword, setStoredAdminPassword] = useState(() => {
-    return localStorage.getItem("df_admin_password") || "admin";
-  });
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [loginError, setLoginError] = useState("");
   const [adminBookings, setAdminBookings] = useState<any[]>([]);
   const [adminFilter, setAdminFilter] = useState<string>("all");
@@ -335,7 +333,6 @@ export default function App() {
         }
         if (sharedState.adminCredentials) {
           setStoredAdminUsername(sharedState.adminCredentials.username || "admin");
-          setStoredAdminPassword(sharedState.adminCredentials.password || "admin");
         }
         if (sharedState.clinicConfig) {
           setClinicConfig(sharedState.clinicConfig);
@@ -373,7 +370,6 @@ export default function App() {
             bookings: adminBookings,
             adminCredentials: {
               username: storedAdminUsername,
-              password: storedAdminPassword,
             },
             clinicConfig,
             services,
@@ -389,8 +385,12 @@ export default function App() {
       }
     };
 
+    if (!adminToken) {
+      return;
+    }
+
     void syncSharedState();
-  }, [sharedStateLoaded, patients, transactions, articles, adminBookings, storedAdminUsername, storedAdminPassword, clinicConfig, services, aiName, aiGreeting, aiPrompt]);
+  }, [sharedStateLoaded, patients, transactions, articles, adminBookings, storedAdminUsername, clinicConfig, services, aiName, aiGreeting, aiPrompt, adminToken]);
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -798,13 +798,31 @@ export default function App() {
     }
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminUsername.trim().toLowerCase() === storedAdminUsername.trim().toLowerCase() && adminPassword === storedAdminPassword) {
+
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: adminUsername, password: adminPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setLoginError(data.error || "نام کاربری یا کلمه عبور نادرست است.");
+        return;
+      }
+
       setIsAdminAuthenticated(true);
+      setAdminToken(data.token || null);
       setLoginError("");
-    } else {
-      setLoginError("نام کاربری یا کلمه عبور نادرست است.");
+      setStoredAdminUsername(data.username || adminUsername);
+      localStorage.setItem("df_admin_username", data.username || adminUsername);
+      localStorage.removeItem("df_admin_password");
+    } catch (error) {
+      console.error(error);
+      setLoginError("امکان ورود به پنل در این لحظه وجود ندارد.");
     }
   };
 
@@ -1438,6 +1456,7 @@ ${clinicConfig.phone}
                   setIsAdminMode(false);
                   setIsAdminAuthenticated(false);
                   setAdminPassword("");
+                  setAdminToken(null);
                 }}
                 className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 border-none"
               >
@@ -1908,8 +1927,7 @@ ${clinicConfig.phone}
                 <SecurityTab
                   storedAdminUsername={storedAdminUsername}
                   setStoredAdminUsername={setStoredAdminUsername}
-                  storedAdminPassword={storedAdminPassword}
-                  setStoredAdminPassword={setStoredAdminPassword}
+                  adminToken={adminToken}
                 />
               )}
 

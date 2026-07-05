@@ -5,15 +5,13 @@ import { motion } from "motion/react";
 interface SecurityTabProps {
   storedAdminUsername: string;
   setStoredAdminUsername: (val: string) => void;
-  storedAdminPassword: string;
-  setStoredAdminPassword: (val: string) => void;
+  adminToken: string | null;
 }
 
 export default function SecurityTab({
   storedAdminUsername,
   setStoredAdminUsername,
-  storedAdminPassword,
-  setStoredAdminPassword,
+  adminToken,
 }: SecurityTabProps) {
   const [currentUsernameInput, setCurrentUsernameInput] = useState("");
   const [currentPasswordInput, setCurrentPasswordInput] = useState("");
@@ -24,25 +22,13 @@ export default function SecurityTab({
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const handleUpdateCredentials = (e: React.FormEvent) => {
+  const handleUpdateCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validations
     if (!currentUsernameInput || !currentPasswordInput) {
       setMessage({
         type: "error",
         text: "لطفاً نام کاربری فعلی و کلمه عبور فعلی خود را وارد نمایید.",
-      });
-      return;
-    }
-
-    if (
-      currentUsernameInput.trim().toLowerCase() !== storedAdminUsername.trim().toLowerCase() ||
-      currentPasswordInput !== storedAdminPassword
-    ) {
-      setMessage({
-        type: "error",
-        text: "نام کاربری فعلی یا کلمه عبور فعلی نادرست است.",
       });
       return;
     }
@@ -79,24 +65,59 @@ export default function SecurityTab({
       return;
     }
 
-    // Success: Update state & localStorage
-    const cleanNewUsername = newUsernameInput.trim();
-    setStoredAdminUsername(cleanNewUsername);
-    setStoredAdminPassword(newPasswordInput);
+    if (!adminToken) {
+      setMessage({
+        type: "error",
+        text: "برای تغییر رمز عبور باید ابتدا دوباره وارد پنل شوید.",
+      });
+      return;
+    }
 
-    localStorage.setItem("df_admin_username", cleanNewUsername);
-    localStorage.setItem("df_admin_password", newPasswordInput);
+    try {
+      const response = await fetch("/api/admin/update-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({
+          currentUsername: currentUsernameInput,
+          currentPassword: currentPasswordInput,
+          newUsername: newUsernameInput,
+          newPassword: newPasswordInput,
+        }),
+      });
 
-    setMessage({
-      type: "success",
-      text: "گذرواژه و اطلاعات ورود به پنل با موفقیت تغییر یافت. برای ورودهای بعدی از اطلاعات جدید استفاده نمایید.",
-    });
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        setMessage({
+          type: "error",
+          text: data.error || "تغییر کلمه عبور با خطا مواجه شد.",
+        });
+        return;
+      }
 
-    // Reset fields except username inputs
-    setCurrentUsernameInput("");
-    setCurrentPasswordInput("");
-    setNewPasswordInput("");
-    setConfirmPasswordInput("");
+      const cleanNewUsername = newUsernameInput.trim();
+      setStoredAdminUsername(cleanNewUsername);
+      localStorage.setItem("df_admin_username", cleanNewUsername);
+      localStorage.removeItem("df_admin_password");
+
+      setMessage({
+        type: "success",
+        text: "گذرواژه و اطلاعات ورود به پنل با موفقیت تغییر یافت. برای ورودهای بعدی از اطلاعات جدید استفاده نمایید.",
+      });
+
+      setCurrentUsernameInput("");
+      setCurrentPasswordInput("");
+      setNewPasswordInput("");
+      setConfirmPasswordInput("");
+    } catch (error) {
+      console.error(error);
+      setMessage({
+        type: "error",
+        text: "در ارتباط با سرور خطایی رخ داد.",
+      });
+    }
   };
 
   return (
